@@ -66,7 +66,7 @@ void loop() {
       Serial.println(id);
       Serial.print("\tTemperature: ");
       Serial.println(board.getTemperatureC(/*id= */id));
-	  delay(1000)
+      delay(1000);
   }
   Serial.println();
 }
