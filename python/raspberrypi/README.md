@@ -32,6 +32,8 @@
 这是一个DS18B20单总线协议转UART/RS485协议转换板Arduino驱动库,通过UART接口和主控连接。<br>
 符合modbus协议能实现串口级联，最大支持248个，每块最大支持挂载8个DS18B20传感器<br>
 ## Connected
+ Sensor      |               MCU                 |
+------------ | :-------------------------------: |
 VCC          |                5V                 |
 GND          |                GND                |
 RX           |connected to the UART TX pin of MCU|
