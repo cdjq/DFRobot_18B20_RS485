@@ -15,6 +15,7 @@
 #ifndef __DFRobot_18B20_RS485_H
 #define __DFRobot_18B20_RS485_H
 
+
 #if ARDUINO >= 100
 #include "Arduino.h"
 #else
@@ -22,77 +23,16 @@
 #endif
 
 #include<Stream.h>
+#include "DFRobot_RTU.h"
 
 //Define DBG, change 0 to 1 open the DBG, 1 to 0 to close.  
-#if 0
+#if 1
 #define DBG(...) {Serial.print("["); Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
 #else
 #define DBG(...)
 #endif
 
-typedef struct{
-  union {
-    struct{
-        uint8_t regAddrH;
-        uint8_t regAddrL;
-    };
-    uint16_t regAddr;
-  };
-}__attribute__ ((packed)) sWriteCmd_t, *pWriteCmd_t;
-
-typedef struct{
-  uint8_t addr;
-  uint8_t cmd;
-  uint8_t payload[0];
-  union {
-    struct{
-        uint8_t csH;
-        uint8_t csL;
-    };
-    uint16_t cs;
-  };
-}__attribute__ ((packed)) sPacketHeader_t, *pPacketHeader_t;
-
-
-class DFRobot_18B20_RS485{
-#define DEVICE_PID  0x8090
-#define DEVICE_VID  0x3343
-#define NO_DEVICE_NUM          0
-#define  BROADCAST_ADDRESS            0x00
-#define DS18B20_ROM_SIZE       8
-#define DEFAULT_DEVICE_ADDRESS         0x20
-#define DS18B20_MAX_NUM        8
-
-#define BAUDRATE_2400      2400
-#define BAUDRATE_4800      4800
-#define BAUDRATE_9600      9600
-#define BAUDRATE_14400     14400
-#define BAUDRATE_19200     19200
-#define BAUDRATE_38400     38400
-#define BAUDRATE_57600     57600
-#define BAUDRATE_115200    115200
-
-#define RS485_SERIAL_7E1    (0<<6) | (1<<3) | (0 << 0)
-#define RS485_SERIAL_7E1_5  (0<<6) | (1<<3) | (1 << 0)
-#define RS485_SERIAL_7E2    (0<<6) | (1<<3) | (2 << 0)
-#define RS485_SERIAL_7O1    (0<<6) | (2<<3) | (0 << 0)
-#define RS485_SERIAL_7O1_5  (0<<6) | (2<<3) | (1 << 0)
-#define RS485_SERIAL_7O2    (0<<6) | (2<<3) | (2 << 0)
-#define RS485_SERIAL_8N1    (1<<6) | (0<<3) | (0 << 0)
-#define RS485_SERIAL_8N1_5  (1<<6) | (0<<3) | (1 << 0)
-#define RS485_SERIAL_8N2    (1<<6) | (0<<3) | (2 << 0)
-#define RS485_SERIAL_8E1    (1<<6) | (1<<3) | (0 << 0)
-#define RS485_SERIAL_8E1_5  (1<<6) | (1<<3) | (1 << 0)
-#define RS485_SERIAL_8E2    (1<<6) | (1<<3) | (2 << 0)
-#define RS485_SERIAL_8O1    (1<<6) | (2<<3) | (0 << 0)
-#define RS485_SERIAL_8O1_5  (1<<6) | (2<<3) | (1 << 0)
-#define RS485_SERIAL_8O2    (1<<6) | (2<<3) | (2 << 0)
-#define RS485_SERIAL_9N1    (2<<6) | (0<<3) | (0 << 0)
-#define RS485_SERIAL_9N1_5  (2<<6) | (0<<3) | (1 << 0)
-#define RS485_SERIAL_9N2    (2<<6) | (0<<3) | (2 << 0)
-
-
-
+class DFRobot_18B20_RS485: public DFRobot_RTU {
 public:
 #define REG_PID                  0x0000
 #define REG_VID                  0x0001
@@ -135,32 +75,59 @@ public:
 #define REG_18B20_NUM5_ACCURACY  0x0040
 #define REG_18B20_NUM6_ACCURACY  0x0041
 #define REG_18B20_NUM7_ACCURACY  0x0042
-typedef struct {
-  uint8_t regH;
-  uint8_t regL;
-  uint8_t regNumH;
-  uint8_t regNumL;
-}sReadCmdStructure_t, *pReadCmdStructure_t;
-typedef enum{
-  eRTU_WRITE_REG_CMD   = 0x06,
-  eRTU_WRITE_MULTIPLE_REG_CMD  = 0x10,
-  eRTU_READ_REG_CMD    = 0x03,
-}eMoudbusCmd_t;
+
+#define DEVICE_PID  0x8090
+#define DEVICE_VID  0x3343
+#define NO_DEVICE_NUM          0
+#define BROADCAST_ADDRESS            0x00
+#define DS18B20_ROM_SIZE       8
+#define DEFAULT_DEVICE_ADDRESS         0x20
+#define DS18B20_MAX_NUM        8
 
 
+#define BAUDRATE_2400      2400
+#define BAUDRATE_4800      4800
+#define BAUDRATE_9600      9600
+#define BAUDRATE_14400     14400
+#define BAUDRATE_19200     19200
+#define BAUDRATE_38400     38400
+#define BAUDRATE_57600     57600
+#define BAUDRATE_115200    115200
 
-typedef enum{
-  eRTU_OK                 = 0x00,
-  eRTU_ILLEGAL_ERROR      = 0x01,
-  eRTU_ILLEGAL_DATA_ADDR  = 0x02,
-  eRTU_ILLEGAL_DATA       = 0x03,
-  eRTU_CRC_ERROR          = 0x04,
-  eRTU_RECV_ERROR         = 0x05,
-  eRTU_ILLEGAL_DEVICE_ADDR,
-}eStatusCode_t;
+#define RS485_SERIAL_7E1    (0<<6) | (1<<3) | (0 << 0)
+#define RS485_SERIAL_7E1_5  (0<<6) | (1<<3) | (1 << 0)
+#define RS485_SERIAL_7E2    (0<<6) | (1<<3) | (2 << 0)
+#define RS485_SERIAL_7O1    (0<<6) | (2<<3) | (0 << 0)
+#define RS485_SERIAL_7O1_5  (0<<6) | (2<<3) | (1 << 0)
+#define RS485_SERIAL_7O2    (0<<6) | (2<<3) | (2 << 0)
+#define RS485_SERIAL_8N1    (1<<6) | (0<<3) | (0 << 0)
+#define RS485_SERIAL_8N1_5  (1<<6) | (0<<3) | (1 << 0)
+#define RS485_SERIAL_8N2    (1<<6) | (0<<3) | (2 << 0)
+#define RS485_SERIAL_8E1    (1<<6) | (1<<3) | (0 << 0)
+#define RS485_SERIAL_8E1_5  (1<<6) | (1<<3) | (1 << 0)
+#define RS485_SERIAL_8E2    (1<<6) | (1<<3) | (2 << 0)
+#define RS485_SERIAL_8O1    (1<<6) | (2<<3) | (0 << 0)
+#define RS485_SERIAL_8O1_5  (1<<6) | (2<<3) | (1 << 0)
+#define RS485_SERIAL_8O2    (1<<6) | (2<<3) | (2 << 0)
+#define RS485_SERIAL_9N1    (2<<6) | (0<<3) | (0 << 0)
+#define RS485_SERIAL_9N1_5  (2<<6) | (0<<3) | (1 << 0)
+#define RS485_SERIAL_9N2    (2<<6) | (0<<3) | (2 << 0)
 
+#define DS18B20_NUM0_ID      0
+#define DS18B20_NUM1_ID      1
+#define DS18B20_NUM2_ID      2
+#define DS18B20_NUM3_ID      3
+#define DS18B20_NUM4_ID      4
+#define DS18B20_NUM5_ID      5
+#define DS18B20_NUM6_ID      6
+#define DS18B20_NUM7_ID      7
 
-  DFRobot_18B20_RS485(Stream *s);//eUARTDetecteMode
+#define DS18B20_ACCURACY_9_BIT   0
+#define DS18B20_ACCURACY_10_BIT  1
+#define DS18B20_ACCURACY_11_BIT  2
+#define DS18B20_ACCURACY_12_BIT  3
+
+  DFRobot_18B20_RS485(uint8_t addr, Stream *s);//eUARTDetecteMode
   ~DFRobot_18B20_RS485();
 /**
  * @brief 传感器设备初始化。
@@ -169,9 +136,9 @@ typedef enum{
  * @n      -1：failed,未接入设备，协议转化板至少要挂载一个18B20设备
  * @n      -2: failed,接入设备过多，协议转化板最多只能挂载8个18B20设备
  */
-  int begin(uint8_t addr);
+  int begin();
 /**
- * @brief 配置串口。
+ * @brief 配置串口,掉电重启后生效。
  * @param baud: 波特率，支持以下配置:
  * @n     BAUDRATE_2400      2400
  * @n     BAUDRATE_4800      4800
@@ -205,6 +172,13 @@ typedef enum{
  * @n      others: 设置失败
  */
   uint8_t configSerial(uint32_t baud, uint16_t config);
+  
+  bool readSerialConfig(uint32_t *baud, uint16_t *config);
+/**
+ * @brief 扫描位置0~7是否挂载18B20传感器。协议转换板最多能挂载8个18B20传感器，分别对应0~7的18B20配置
+ * @return 返回8位状态位，从低到高分别代表0~7个传感器是否被挂载，某位置1代表对应的序号有传感器，置0代表无传感器。
+ */
+  uint8_t scan();
 /**
  * @brief 设置设备地址。
  * @param newAddr: 设备地址，范围1~247。
@@ -220,18 +194,18 @@ typedef enum{
   uint8_t getDeviceAddress();
 /**
  * @brief 设置18B20精度。
+ * @param id: ds18b20序号，范围0~7
+ * @param accuracy：精度设置
  * @return 设置状态:
  * @n      0:  设置成功
  * @n      others: 设置失败
  */
-  uint8_t set18B20Accuracy(uint8_t id, uint8_t accuracy);
+  bool set18B20Accuracy(uint8_t id, uint8_t accuracy);
 /**
  * @brief 设置18B20精度。
  * @return 精度:
- * @n      0:  设置成功
- * @n      others: 设置失败
  */
-uint8_t get18B20Accuracy(uint8_t id);
+  uint8_t get18B20Accuracy(uint8_t id);
 /**
  * @brief 设置温度的上下阈值。
  * @param id: 第几个温度传感器，范围0~7。
@@ -239,30 +213,30 @@ uint8_t get18B20Accuracy(uint8_t id);
  * @param tL: 设置温度的下阈值，范围-55~125℃
  * @n note: 必须满足设置条件tH > tL
  * @return 设置状态:
- * @n      0:  设置成功
- * @n      others: 设置失败
+ * @n      true:  设置成功
+ * @n      false: 设置失败
  */
-  uint8_t setTemperatureThreshold(uint8_t id, int8_t tH, int8_t tL);
+  bool setTemperatureThreshold(uint8_t id, int8_t tH, int8_t tL);
 /**
  * @brief 获取温度的上下阈值。
  * @param id: 第几个温度传感器，范围0~7。
  * @param tH: 存储温度的上阈值
  * @param tL: 存储温度的下阈值
  * @return 设置状态:
- * @n      0:  设置成功
- * @n      others: 获取失败
+ * @n      true:  获取成功
+ * @n      false: 获取失败
  */
-  uint8_t getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL);
+  bool getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL);
 /**
  * @brief 获取18B20的ROM码。
  * @param id: 第几个温度传感器，范围0~7。
  * @param rom: 存放ROM码的指针。
  * @param len: 固定长度，必须为8字节
  * @return 读取状态:
- * @n      0:  获取成功
- * @n      others: 获取失败
+ * @n      true:  获取成功
+ * @n      false: 获取失败
  */
-  uint8_t get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len = 8);
+  bool get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len = 8);
   
 /**
  * @brief 获取设备id的温度。
@@ -292,28 +266,22 @@ uint8_t get18B20Accuracy(uint8_t id);
 protected:
   uint16_t getPID();
   uint16_t getVID();
-  
-  pPacketHeader_t packed(eMoudbusCmd_t cmd, uint16_t reg, uint8_t *data, uint16_t len);
-  pPacketHeader_t packed(uint8_t cmd, uint16_t reg, uint8_t *data, uint16_t len);
-  uint8_t parsePackage(pPacketHeader_t head, void *data, uint16_t len);
-  pPacketHeader_t recvPackage(uint8_t cmd, uint16_t len);
-  uint16_t calculateCRC(uint8_t *data, uint8_t len);
-  void writeData(void *data, uint8_t len);
-  uint8_t readData(void *data, uint8_t len);
+  bool detectDeviceAddress(uint8_t addr);
 
 private:
   uint8_t _addr;
-  Stream *_s;
 };
 
 class DFRobot_18B20_UART: public DFRobot_18B20_RS485{
 public:
 /**
- * @brief DFRobot_SCW8916B_UART abstract class constructor. Construct serial port detection object.(eUARTDetecteMode)
+ * @brief DFRobot_18B20_UART abstract class constructor. 配置从机的设备地址，以及串口
+ * @param addr:  
  * @param s:  The class pointer object of Abstract class， here you can fill in the pointer to the serial port object
  * @param en: The IO pin of MCU which is connected to the EN pin of Non-contact liquid level sensor.when you call selfCheck,
  * @n setSensitivityLevel, LowerWaterLevelCalibration,or UpperWaterLevelCalibration function, you must use EN pin.
  */
-  DFRobot_18B20_UART(Stream *s);
+  DFRobot_18B20_UART(uint8_t addr, Stream *s);
 };
+
 #endif

@@ -16,6 +16,8 @@ DFRobot_18B20_UART	KEYWORD1
 
 begin	KEYWORD2
 configSerial	KEYWORD2
+readSerialConfig	KEYWORD2
+scan	KEYWORD2
 setDeviceAddress	KEYWORD2
 getDeviceAddress	KEYWORD2
 set18B20Accuracy	KEYWORD2
@@ -24,6 +26,7 @@ setTemperatureThreshold	KEYWORD2
 getTemperatureThreshold	KEYWORD2
 get18B20ROM	KEYWORD2
 getTemperatureC	KEYWORD2
+get18B20Number	KEYWORD2
 exist	KEYWORD2
 
 

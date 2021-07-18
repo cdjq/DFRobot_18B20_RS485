@@ -1,6 +1,6 @@
 /*!
- * @file getTemperature.ino
- * @brief 获取18B20转RS485协议板上所有DS18B20的温度信息,未更改前，默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位。
+ * @file scanSensor.ino
+ * @brief 扫描协议转换板上挂载的18B20传感器，并读出相应的配置值。
  * @n connected table
  * ---------------------------------------------------------------------------------------------------------------
  * sensor pin |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
@@ -30,9 +30,6 @@
   DFRobot_18B20_UART board(/*addr =*/DEFAULT_DEVICE_ADDRESS, /*s =*/&Serial1);
 #endif
 
-static uint8_t ds18b20Num = 0;
-
-
 void setup() {
   Serial.begin(115200);
   while(!Serial){                                                     //Waiting for USB Serial COM port to open.
@@ -57,18 +54,43 @@ void setup() {
 }
 
 void loop() {
-  ds18b20Num = board.get18B20Number();
-  Serial.print("18B20 NUM: ");
-  Serial.println(ds18b20Num);
-  
-  for(int id = 0; id < DS18B20_MAX_NUM; id++){
-      Serial.print("id: ");
-      Serial.print(id);
-      Serial.print("\tTemperature: ");
-      Serial.println(board.getTemperatureC(/*id= */id));
-      delay(1000);
+  uint8_t state = board.scan();
+  uint8_t rom[8];
+  int8_t thresholdH, thresholdL;
+  uint8_t accuracy;
+  float temp;
+  for(int id = 0; id < 8; id++){
+      if(state & (1 << id)){
+          Serial.print("18B20 id: ");
+          Serial.println(id);
+          Serial.print("rom: ");
+          if(board.get18B20ROM(id, rom, sizeof(rom))){
+              for(int i = 0; i < 8; i++){
+                  Serial.print("0x");
+                  if(rom[i] < 16) Serial.print(0);
+                  Serial.print(rom[i], HEX);
+                  Serial.print(" ");
+              }
+          }
+          Serial.println();
+          Serial.print("Thread(H,L): (");
+          if(board.getTemperatureThreshold(id, &thresholdH, &thresholdL)){
+              Serial.print(thresholdH);
+              Serial.print(", ");
+              Serial.print(thresholdL);
+          }
+          Serial.println(")");
+          Serial.print("Accuracy(0[9],1[10],2[11],3[12]): ");
+          accuracy = board.get18B20Accuracy(id);
+          Serial.println(accuracy);
+          Serial.print("Temperature: ");
+          temp = board.getTemperatureC(id);
+          Serial.println(temp);
+          Serial.println();
+      }
   }
   Serial.println();
+  delay(1000);
 }
 
 

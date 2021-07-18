@@ -1,6 +1,8 @@
 /*!
- * @file getTemperature.ino
- * @brief 获取18B20转RS485协议板上所有DS18B20的温度信息,未更改前，默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位。
+ * @file config.ino
+ * @brief 通过广播地址(RTU_BROADCAST_ADDRESS(0x00))配置协议转换板的modbus地址和串口。将modbus地址配置为0x20，并将串口配置为
+ * @n 9600波特率，8位数据位，无校验位，1位停止位。（串口配置必须掉电重启后才能生效）设备地址和串口配置掉电不会丢失。
+ * @n 注意：所有从机都会处理广播包，但不会响应。
  * @n connected table
  * ---------------------------------------------------------------------------------------------------------------
  * sensor pin |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
@@ -25,13 +27,10 @@
 
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
   SoftwareSerial mySerial(/*rx =*/4, /*tx =*/5);
-  DFRobot_18B20_UART board(/*addr =*/DEFAULT_DEVICE_ADDRESS, /*s =*/&mySerial);
+  DFRobot_18B20_UART board(/*addr =*/RTU_BROADCAST_ADDRESS, /*s =*/&mySerial);
 #else
-  DFRobot_18B20_UART board(/*addr =*/DEFAULT_DEVICE_ADDRESS, /*s =*/&Serial1);
+  DFRobot_18B20_UART board(/*addr =*/RTU_BROADCAST_ADDRESS, /*s =*/&Serial1);
 #endif
-
-static uint8_t ds18b20Num = 0;
-
 
 void setup() {
   Serial.begin(115200);
@@ -54,21 +53,15 @@ void setup() {
   }
   Serial.println("done.");
   
+  board.configSerial(/*baud =*/BAUDRATE_9600, /*config =*/RS485_SERIAL_8N1);
+  
+  board.setDeviceAddress(/*newAddr*/0x20);
+  Serial.print("New device addr : 0x");
+  Serial.println(board.getDeviceAddress(),HEX);
 }
 
 void loop() {
-  ds18b20Num = board.get18B20Number();
-  Serial.print("18B20 NUM: ");
-  Serial.println(ds18b20Num);
   
-  for(int id = 0; id < DS18B20_MAX_NUM; id++){
-      Serial.print("id: ");
-      Serial.print(id);
-      Serial.print("\tTemperature: ");
-      Serial.println(board.getTemperatureC(/*id= */id));
-      delay(1000);
-  }
-  Serial.println();
 }
 
 

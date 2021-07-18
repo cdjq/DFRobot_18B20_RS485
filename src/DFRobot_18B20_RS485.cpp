@@ -15,8 +15,8 @@
 #include <Arduino.h>
 #include "DFRobot_18B20_RS485.h"
 
-DFRobot_18B20_RS485::DFRobot_18B20_RS485(Stream *s)
-  :_addr(BROADCAST_ADDRESS), _s(s){
+DFRobot_18B20_RS485::DFRobot_18B20_RS485(uint8_t addr,Stream *s)
+  :DFRobot_RTU(s),_addr(addr){
   
 }
 DFRobot_18B20_RS485::~DFRobot_18B20_RS485(){}
@@ -27,115 +27,180 @@ DFRobot_18B20_RS485::~DFRobot_18B20_RS485(){}
  * @n      -1：failed,未接入设备，协议转化板至少要挂载一个18B20设备
  * @n      -2: failed,接入设备过多，协议转化板最多只能挂载8个18B20设备
  */
-int DFRobot_18B20_RS485::begin(uint8_t addr){
-  delay(1000);//wait for 1s
-  _addr = addr;
-  if(getPID() != DEVICE_PID){
-      DBG("PID Error");
-      return -1;
+int DFRobot_18B20_RS485::begin(){
+  delay(2000);//wait for 1s
+  if(_addr > 0xF7){
+      DBG("Invaild Device addr.");
+  }
+  if(_addr != 0){
+      if(!detectDeviceAddress(_addr)){
+          DBG("Device addr Error.");
+          return -1;
+      }
+      
+      if(getPID() != DEVICE_PID){
+          DBG("PID Error");
+          return -1;
+      }
+      
+      if(getVID() != DEVICE_VID){
+          DBG("VID Error");
+          return -1;
+      }
   }
   
-  if(getVID() != DEVICE_VID){
-      DBG("VID Error");
-      return -1;
-  }
   return 0;
 }
 
 uint8_t DFRobot_18B20_RS485::configSerial(uint32_t baud, uint16_t config){
-  uint8_t ret = 0;
-  uint8_t data[] = {0x00,0x02,0x04, 0x00,0x00,(config<<8)&0xFF, config&0xFF};
+  uint8_t data[] = {0x00, 0x00, (uint8_t)(config>>8)&0xFF, (uint8_t)(config&0xFF)};
   switch(baud){
       case BAUDRATE_2400:
-           data[6] = 1;
+           data[1] = 1;
            break;
       case BAUDRATE_4800:
-           data[6] = 2;
+           data[1] = 2;
            break;
       case BAUDRATE_9600:
-           data[6] = 3;
+           data[1] = 3;
            break;
       case BAUDRATE_14400:
-           data[6] = 4;
+           data[1] = 4;
            break;
       case BAUDRATE_19200:
-           data[6] = 5;
+           data[1] = 5;
            break;
       case BAUDRATE_38400:
-           data[6] = 6;
+           data[1] = 6;
            break;
       case BAUDRATE_57600:
-           data[6] = 7;
+           data[1] = 7;
            break;
       case BAUDRATE_115200:
-           data[6] = 8;
+           data[1] = 8;
            break;
       default:
-           data[6] = 3;
+           data[1] = 3;
            break;
   }
-  pPacketHeader_t header = packed(eRTU_WRITE_MULTIPLE_REG_CMD, REG_UART_CTRL0, data, sizeof(data));
-  ret = parsePackage(header, NULL, 0);
+  uint8_t ret = writeHoldingRegister(_addr, REG_UART_CTRL0, data, sizeof(data));
   return ret;
+}
+
+bool DFRobot_18B20_RS485::readSerialConfig(uint32_t *baud, uint16_t *config){
+  if((baud == NULL) || (config == NULL)) return false;
+  uint8_t data[4];
+  uint8_t ret = readHoldingRegister(_addr, REG_UART_CTRL0, data, sizeof(data));
+  DBG(ret,HEX);
+  if(ret == 0){
+      switch(data[1]){
+          case 1:
+            *baud = BAUDRATE_2400;
+            break;
+          case 2:
+            *baud = BAUDRATE_4800;
+            break;
+          case 3:
+            *baud = BAUDRATE_9600;
+            break;
+          case 4:
+            *baud = BAUDRATE_14400;
+            break;
+          case 5:
+            *baud = BAUDRATE_19200;
+            break;
+          case 6:
+            *baud = BAUDRATE_38400;
+            break;
+          case 7:
+            *baud = BAUDRATE_57600;
+            break;
+          case 8:
+            *baud = BAUDRATE_115200;
+            break;
+          default:
+            *baud = BAUDRATE_9600;
+            break;
+      }
+      *config = ((data[2] << 8) & 0xFF) | data[1];
+      return true;
+  }
+  
+  return false;
+}
+
+uint8_t DFRobot_18B20_RS485::scan(){
+  uint8_t temp[2];
+  uint8_t state = 0;
+  uint8_t ret = readHoldingRegister(_addr, REG_ROM_FLAG, &temp, sizeof(temp));
+  if(ret == 0){
+      state = temp[0] & temp[1];
+  }
+  return state;
 }
 
 bool DFRobot_18B20_RS485::setDeviceAddress(uint8_t newAddr){
   if(newAddr < 1 || newAddr > 0xF7) return false;
-  uint8_t data[] = {0x00, newAddr};
-  pPacketHeader_t header = packed(eRTU_WRITE_REG_CMD, REG_DEVICE_ADDR, data, sizeof(data));
-  if(_addr == newAddr) return true;
-  else return false;
+  uint16_t ret = writeHoldingRegister(_addr, REG_DEVICE_ADDR, (uint16_t)newAddr);
+  if(_addr == 0){
+      delay(100);
+      ret = readHoldingRegister(newAddr, REG_DEVICE_ADDR);
+  }
+  if(ret == newAddr){
+      _addr = newAddr;
+      return true;
+  }
+  return false;
 }
 
 uint8_t DFRobot_18B20_RS485::getDeviceAddress(){
   return _addr;
 }
 
-uint8_t DFRobot_18B20_RS485::set18B20Accuracy(uint8_t id, uint8_t accuracy){
-  uint8_t data[] = {0x00, accuracy};
-  pPacketHeader_t header = packed(eRTU_WRITE_REG_CMD,REG_18B20_NUM0_ACCURACY, data, sizeof(data));
-  return parsePackage(header, NULL, 0);
+bool DFRobot_18B20_RS485::set18B20Accuracy(uint8_t id, uint8_t accuracy){
+  if(id >= DS18B20_MAX_NUM) return false;
+  uint16_t ret = writeHoldingRegister(_addr, REG_18B20_NUM0_ACCURACY+id, (uint16_t)accuracy);
+  if(ret == accuracy){
+      return true;
+  }else return false;
 }
 uint8_t DFRobot_18B20_RS485::get18B20Accuracy(uint8_t id){
-  uint8_t ret = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_18B20_NUM0_ACCURACY, data, sizeof(data));
-  ret = parsePackage(header, &data, 2);
+  if(id >= DS18B20_MAX_NUM) return 0xFF;
+  uint8_t accuracy = 0xFF;
+  uint16_t ret = readCoilsRegister(_addr, REG_18B20_NUM0_ACCURACY+id);
+  accuracy = (uint8_t)(ret & 0xFF);
+  return accuracy;
+}
+
+bool DFRobot_18B20_RS485::setTemperatureThreshold(uint8_t id, int8_t tH, int8_t tL){
+  if((id >= DS18B20_MAX_NUM) || (tH < - 55) || (tH > 125) || (tL < -55) || (tL > 125)) return false;
+  uint16_t val = (((uint8_t)tH) << 8)|(uint8_t)tL;
+  uint16_t ret = writeHoldingRegister(_addr, REG_18B20_NUM0_TH_TL+id, val);
+  if(ret == val){
+      return true;
+  }else return false;
+}
+
+bool DFRobot_18B20_RS485::getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL){
+  if(id >= DS18B20_MAX_NUM) return false;
+  uint8_t temp[2];
+  uint8_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_TH_TL+id, &temp, sizeof(temp));
   if(ret == 0){
-      ret = data[1];
+      *tH = (int8_t)temp[0];
+      *tL = (int8_t)temp[1];
+      return true;
   }
-  return ret;
+  return false;
 }
 
-uint8_t DFRobot_18B20_RS485::setTemperatureThreshold(uint8_t id, int8_t tH, int8_t tL){
-  uint8_t ret = 0;
-  if(tH <= tL || tH < -55 || tH > 125 || tL < -55 || tL > 125){
-      return -1;
-  }
-  uint8_t data[] = {(uint8_t)tH, (uint8_t)tL};
-  pPacketHeader_t header = packed(eRTU_WRITE_REG_CMD, REG_18B20_NUM0_TH_TL, data, sizeof(data));
-  return parsePackage(header, NULL, 0);
-}
-
-uint8_t DFRobot_18B20_RS485::getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL){
-  uint8_t ret = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_18B20_NUM0_TH_TL, data, sizeof(data));
-  ret = parsePackage(header, &data, 2);
+bool DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len){
+  if((id >= DS18B20_MAX_NUM) || (rom == NULL) || (len != DS18B20_ROM_SIZE)) return false;
+  uint8_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_TH_TL+id, rom, len);
   if(ret == 0){
-      *tH = (int8_t)data[0];
-      *tL = (int8_t)data[1];
+      return true;
   }
-  return ret;
-}
-
-uint8_t DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len){
-  uint8_t ret = 0;
-  if(len != DS18B20_ROM_SIZE) return 1;
-  uint8_t data[] = {0x00, 0x04};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_18B20_NUM0_ADDR, data, sizeof(data));
-  ret = parsePackage(header, &rom, len);
-  return ret;
+  
+  return false;
 }
   
 /**
@@ -144,14 +209,8 @@ uint8_t DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len){
  * @return 温度:
  */
 float DFRobot_18B20_RS485::getTemperatureC(uint8_t id){
-  uint8_t ret = 0;
-  float temp = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_18B20_NUM0_TEMP+id, data, sizeof(data));
-  ret = parsePackage(header, &data, 2);
-  if(ret == 0){
-      temp = (data[0] << 8) | data[1];
-  }
+  if(id >= DS18B20_MAX_NUM) return 0.0;
+  uint16_t temp = readHoldingRegister(_addr, REG_18B20_NUM0_TEMP+id);
   return temp/16.0;
 }
 /**
@@ -163,11 +222,8 @@ float DFRobot_18B20_RS485::getTemperatureC(uint8_t id){
  * @n      8:  协议转换板上挂载了8个18B20传感器
  */
 uint8_t DFRobot_18B20_RS485::get18B20Number(){
-  uint16_t ret = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_18B20_NUM, data, sizeof(data));
-  parsePackage(header, &ret, 2);
-  return ret;
+  uint8_t num = (uint8_t)readHoldingRegister(_addr, REG_18B20_NUM);
+  return num;
 }
 /**
  * @brief 判断设备是否存在？如果存在将存储该设备的64位ROM码。
@@ -182,145 +238,24 @@ bool DFRobot_18B20_RS485::exist(uint8_t id, uint8_t rom[8]){
 }
 
 uint16_t DFRobot_18B20_RS485::getPID(){
-  uint16_t ret = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD, REG_PID, data, sizeof(data));
-  parsePackage(header, &ret, 2);
-  return ret;
+  uint16_t val = readHoldingRegister(_addr, REG_PID);
+  return val;
 }
 
 uint16_t DFRobot_18B20_RS485::getVID(){
-  uint16_t ret = 0;
-  uint8_t data[] = {0x00, 0x01};
-  pPacketHeader_t header = packed(eRTU_READ_REG_CMD,REG_VID, data, sizeof(data));
-  parsePackage(header, &ret, 2);
+  uint16_t ret = readHoldingRegister(_addr, REG_VID);
   return ret;
 }
 
-uint8_t DFRobot_18B20_RS485::parsePackage(pPacketHeader_t head, void *data, uint16_t len){
-  eStatusCode_t ret = eRTU_OK;
-  if(head != NULL){
-      switch(head->cmd){
-          case eRTU_WRITE_REG_CMD:
-          case eRTU_WRITE_MULTIPLE_REG_CMD:
-               memcpy(data, &head->payload[2], len);
-               break;
-          case eRTU_READ_REG_CMD:
-               if(head->payload[0] == len){
-                   memcpy(data, &head->payload[1], len);
-               }
-               break;
-          default:
-               ret = (eStatusCode_t)head->payload[2];
-               break;
-      }
-      free(head);
-  }else{
-      eStatusCode_t ret = eRTU_RECV_ERROR;
+bool DFRobot_18B20_RS485::detectDeviceAddress(uint8_t addr){
+  uint16_t ret = readHoldingRegister(addr, REG_DEVICE_ADDR);
+  if((ret & 0xFF) == addr){
+      return true;
   }
-  return (uint8_t)ret;
+  return false;
 }
 
-pPacketHeader_t DFRobot_18B20_RS485::packed(eMoudbusCmd_t cmd, uint16_t reg, uint8_t *data, uint16_t len){
-  packed((uint8_t)cmd, reg, data, len);
-}
-
-pPacketHeader_t DFRobot_18B20_RS485::packed(uint8_t cmd, uint16_t reg, uint8_t *data, uint16_t len){
-  pPacketHeader_t header = NULL;
-  uint16_t length = sizeof(sPacketHeader_t) + len+2;
-  uint16_t crc = 0;
-  if((header = (pPacketHeader_t)malloc(length)) == NULL){
-      DBG("Memory ERROR");
-      return NULL;
-  }
-  header->payload[0] = (reg >> 8) & 0xFF;
-  header->payload[1] = reg  & 0xFF;
-  header->addr = _addr;
-  header->cmd = cmd;
-  memcpy(header->payload+2, data, len);
-  crc = calculateCRC((uint8_t *)header, length-2);
-  header->payload[length-4] = (crc >> 8) & 0xFF;
-  header->payload[length-3] = crc & 0xFF;
-  _s->write((uint8_t *)header, length);
-  delay(5);
-  switch(cmd){
-      case eRTU_WRITE_REG_CMD:
-      case eRTU_WRITE_MULTIPLE_REG_CMD:
-           length = 8;
-           break;
-      case eRTU_READ_REG_CMD:
-           length = 5 + ((header->payload[2] << 8) | header->payload[3]);
-           break;
-  }
-  free(header);
-  return recvPackage(cmd, length);
-}
-
-pPacketHeader_t DFRobot_18B20_RS485::recvPackage(uint8_t cmd, uint16_t len){
-  uint8_t head[2] = {0,0};
-  uint8_t index = 0;
-  uint16_t crc = 0;
-  pPacketHeader_t header = NULL;
-  while(_s->available()){
-      head[index++] = (uint8_t)_s->read();
-LOOP:
-      if((index == 1) && (head[0] != 0)){
-          index = 0;
-      }else if((index == 2) && ((head[1] & 0x7F) != cmd)){
-          index = 1;
-          head[0] = head[1];
-          
-          goto LOOP;
-      }else if((index == 2) && ((head[1] & 0x7F) == cmd)){
-          
-          break;
-      }
-  }
-  if(head[1] & 0x80) len = 5;
-  
-  if((header = (pPacketHeader_t)malloc(len)) == NULL){
-      DBG("Memory ERROR");
-      return NULL;
-  }
-  memcpy((uint8_t *)header, head, 2);
-  len -= 2;
-  index = 0;
-  while(len--){
-      if(_s->available()){
-          header->payload[index++] = (uint8_t)_s->read();
-      }else{
-          free(header);
-          return NULL;
-      }
-  }
-  crc = (header->payload[len-4] << 8) | header->payload[len-3];
-  if(crc != calculateCRC((uint8_t *)header, len-2)){
-      free(header);
-      DBG("CRC ERROR");
-      return NULL;
-  }
-  if(_addr == 0) _addr = head[0];
-  return header;
-}
-
-uint16_t DFRobot_18B20_RS485::calculateCRC(uint8_t *data, uint8_t len){
-  uint16_t crc = 0xFFFF;
-  for( uint8_t pos = 0; pos < len; pos++){
-    crc ^= (uint16_t)data[ pos ];
-    for(uint8_t i = 8; i != 0; i--){
-      if((crc & 0x0001) != 0){
-        crc >>= 1;
-        crc ^= 0xA001;
-      }else{
-         crc >>= 1;
-      }
-    }
-  }
-  crc = ((crc & 0x00FF) << 8) | ((crc & 0xFF00) >> 8);
-  return crc;
-}
-
-DFRobot_18B20_UART::DFRobot_18B20_UART(Stream *s)
-  :DFRobot_18B20_RS485(s){
+DFRobot_18B20_UART::DFRobot_18B20_UART(uint8_t addr, Stream *s)
+  :DFRobot_18B20_RS485(addr, s){
   
 }
