@@ -195,7 +195,7 @@ bool DFRobot_18B20_RS485::getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t
 
 bool DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len){
   if((id >= DS18B20_MAX_NUM) || (rom == NULL) || (len != DS18B20_ROM_SIZE)) return false;
-  uint8_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_TH_TL+id, rom, len);
+  uint8_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_ADDR+id, rom, len);
   if(ret == 0){
       return true;
   }

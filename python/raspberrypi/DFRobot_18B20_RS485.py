@@ -1,34 +1,14 @@
 # -*- coding:utf-8 -*-
-
 '''
-  @file DFRobot_SCW8916B.py
-  @brief Define the basic structure of the DFRobot_SCW8916B class and the implementation of the basic methods.
-  @n Non-contact liquid level sensor python driver library for Raspberry Pi.
-  @n Features:
-  @n 1. Space detection thickness: <= 2mm.
-  @n 2. Support two detection modes: Level one-to-one detection and UART detection.
-  @n 3. Support set and get sensitivity level: 0~7.
-  @n 4. Support water level calibration.
-  @
-  @n Hardware conneted table in Level one-to-one detection mode
-  @n -----------------------------------------------
-  @n  Sensor      |         raspberry pi           |
-  @n -----------------------------------------------
-  @n TSET         | connected to the IO pin of MCU |
-  @n OUT          | connected to the IO pin of MCU |
-  @n EN           | connected to the IO pin of MCU |
-  @n VCC          |                5V              |
-  @n GND          |                GND             |
-  @n RX           | not connected, floating        |
-  @n TX           | connected to the IO pin of MCU |
-  @n -----------------------------------------------
+  @file DFRobot_18B20_RS485.py
+  @brief 这是一款18b20单总线协议转RS485及UART协议的协议转接板驱动库。使用它，你可以通过Arduino 主控的RS485和UART接口驱动18B20
+  @n 传感器。这块转换板有以下特点：
+  @n 1. 最大能同时连接8个18B20传感器;
+  @n 2. Arduino MCU通过UART接口或RS485接口同传感器通信。
   @n Hardware conneted table in UART detection mode
   @n --------------------------------------------------
   @n  Sensor      |           raspberry pi            |
   @n --------------------------------------------------
-  @n TSET         | not connected, floating           |
-  @n OUT          | not connected, floating           |
-  @n EN           | connected to the IO pin of MCU    |
   @n VCC          |                5V                 |
   @n GND          |                GND                |
   @n RX           |connected to the UART TX pin of MCU|
@@ -38,506 +18,384 @@
   @licence     The MIT License (MIT)
   @author      [Arya](xue.peng@dfrobot.com)
   @version  V1.0
-  @date  2021-04-16
+  @date  2021-07-05
   @get from https://www.dfrobot.com
-  @url https://github.com/DFRobot/DFRobot_SCT80S16B
+  @url https://github.com/DFRobot/DFRobot_18B20_RS485
 '''
+
 import sys
 import serial
 import time
-import RPi.GPIO as GPIO
+from DFRobot_RTU import *
 
-ERR_CALIBRATION_CODE = 0xAA
+class DFRobot_18B20_RS485(DFRobot_RTU):
 
-CALIBRATION_MODE_LOWER_LEVEL = 0
-CALIBRATION_MODE_LOWER_AND_UPPER_LEVEL = 1
-class DFRobot_Nilometer:
-  '''Enum constant'''
-  eSENSITIVITY_LEVEL0 = 0
-  eSENSITIVITY_LEVEL1 = 1
-  eSENSITIVITY_LEVEL2 = 2
-  eSENSITIVITY_LEVEL3 = 3
-  eSENSITIVITY_LEVEL4 = 4
-  eSENSITIVITY_LEVEL5 = 5
-  eSENSITIVITY_LEVEL6 = 6
-  eSENSITIVITY_LEVEL7 = 7
-
-  eLEVEL_DETECT_MODE = 0
-  eUART_DETECT_MODE = 1
+  REG_PID                  = 0x0000
+  REG_VID                  = 0x0001
+  REG_DEVICE_ADDR          = 0x0002
+  REG_UART_CTRL0           = 0x0003
+  REG_UART_CTRL1            = 0x0004
+  REG_VERSION              = 0x0005
+  REG_ALARM                = 0x0008
+  REG_ROM_FLAG             = 0x0009
+  REG_18B20_NUM            = 0x000A
+  REG_18B20_NUM0_ADDR      = 0x000B
+  REG_18B20_NUM1_ADDR      = 0x000F
+  REG_18B20_NUM2_ADDR      = 0x0013
+  REG_18B20_NUM3_ADDR      = 0x0017
+  REG_18B20_NUM4_ADDR      = 0x001B
+  REG_18B20_NUM5_ADDR      = 0x001F
+  REG_18B20_NUM6_ADDR      = 0x0023
+  REG_18B20_NUM7_ADDR      = 0x0027
+  REG_18B20_NUM0_TEMP      = 0x002B
+  REG_18B20_NUM1_TEMP      = 0x002C
+  REG_18B20_NUM2_TEMP      = 0x002D
+  REG_18B20_NUM3_TEMP      = 0x002E
+  REG_18B20_NUM4_TEMP      = 0x002F
+  REG_18B20_NUM5_TEMP      = 0x0030
+  REG_18B20_NUM6_TEMP      = 0x0031
+  REG_18B20_NUM7_TEMP      = 0x0032
+  REG_18B20_NUM0_TH_TL     = 0x0033
+  REG_18B20_NUM1_TH_TL     = 0x0034
+  REG_18B20_NUM2_TH_TL     = 0x0035
+  REG_18B20_NUM3_TH_TL     = 0x0036
+  REG_18B20_NUM4_TH_TL     = 0x0037
+  REG_18B20_NUM5_TH_TL     = 0x0038
+  REG_18B20_NUM6_TH_TL     = 0x0039
+  REG_18B20_NUM7_TH_TL     = 0x003A
+  REG_18B20_NUM0_ACCURACY  = 0x003B
+  REG_18B20_NUM1_ACCURACY  = 0x003C
+  REG_18B20_NUM2_ACCURACY  = 0x003D
+  REG_18B20_NUM3_ACCURACY  = 0x003E
+  REG_18B20_NUM4_ACCURACY  = 0x003F
+  REG_18B20_NUM5_ACCURACY  = 0x0040
+  REG_18B20_NUM6_ACCURACY  = 0x0041
+  REG_18B20_NUM7_ACCURACY  = 0x0042
   
-  SELF_CHECK_CMD     =   0x34
-  CALIB_UART_CMD_LWL =   0x25
-  CALIB_UART_CMD_UWL =   0x8A
-  CALIB_IO_TIME_LWL  =   0.1
-  CALIB_IO_TIME_UWL  =   0.2
+  DEVICE_PID            = 0x8090
+  DEVICE_VID            = 0x3343
+  NO_DEVICE_NUM         = 0
+  BROADCAST_ADDRESS     = 0x00
+  DS18B20_ROM_SIZE      = 8
+  DEFAULT_DEVICE_ADDRESS= 0x20
+  DS18B20_MAX_NUM       =8
   
-  _out = -1
-  _mode = 0
-  _en  = -1
-  _test = -1
-  _rslt_h = 0
-  _rslt_l = 0
-  _ser = -1
+  
+  BAUDRATE_2400    = 2400
+  BAUDRATE_4800    = 4800
+  BAUDRATE_9600    = 9600
+  BAUDRATE_14400   = 14400
+  BAUDRATE_19200   = 19200
+  BAUDRATE_38400   = 38400
+  BAUDRATE_57600   = 57600
+  BAUDRATE_115200  = 115200
+  
+  RS485_SERIAL_7E1    = (0<<6) | (1<<3) | (0 << 0)
+  RS485_SERIAL_7E1_5  = (0<<6) | (1<<3) | (1 << 0)
+  RS485_SERIAL_7E2    = (0<<6) | (1<<3) | (2 << 0)
+  RS485_SERIAL_7O1    = (0<<6) | (2<<3) | (0 << 0)
+  RS485_SERIAL_7O1_5  = (0<<6) | (2<<3) | (1 << 0)
+  RS485_SERIAL_7O2    = (0<<6) | (2<<3) | (2 << 0)
+  RS485_SERIAL_8N1    = (1<<6) | (0<<3) | (0 << 0)
+  RS485_SERIAL_8N1_5  = (1<<6) | (0<<3) | (1 << 0)
+  RS485_SERIAL_8N2    = (1<<6) | (0<<3) | (2 << 0)
+  RS485_SERIAL_8E1    = (1<<6) | (1<<3) | (0 << 0)
+  RS485_SERIAL_8E1_5  = (1<<6) | (1<<3) | (1 << 0)
+  RS485_SERIAL_8E2    = (1<<6) | (1<<3) | (2 << 0)
+  RS485_SERIAL_8O1    = (1<<6) | (2<<3) | (0 << 0)
+  RS485_SERIAL_8O1_5  = (1<<6) | (2<<3) | (1 << 0)
+  RS485_SERIAL_8O2    = (1<<6) | (2<<3) | (2 << 0)
+  RS485_SERIAL_9N1    = (2<<6) | (0<<3) | (0 << 0)
+  RS485_SERIAL_9N1_5  = (2<<6) | (0<<3) | (1 << 0)
+  RS485_SERIAL_9N2    = (2<<6) | (0<<3) | (2 << 0)
+  
+  DS18B20_NUM0_ID    = 0
+  DS18B20_NUM1_ID    = 1
+  DS18B20_NUM2_ID    = 2
+  DS18B20_NUM3_ID    = 3
+  DS18B20_NUM4_ID    = 4
+  DS18B20_NUM5_ID    = 5
+  DS18B20_NUM6_ID    = 6
+  DS18B20_NUM7_ID    = 7
+  
+  DS18B20_ACCURACY_9_BIT  = 0
+  DS18B20_ACCURACY_10_BIT = 1
+  DS18B20_ACCURACY_11_BIT = 2
+  DS18B20_ACCURACY_12_BIT = 3
 
-  def __init__(self):
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
+  def __init__(self, addr, baud = 9600, bits = 8, parity = 'N', stopbit = 1):
+    self._addr = addr
+    DFRobot_RTU.__init__(self, baud, bits, parity, stopbit)
 
+  '''
+    @brief 传感器设备初始化。
+    @return initialization state:
+    @n       0: sucess
+    @n      -1: failed
+  '''
   def begin(self):
-    '''
-      @brief liquide level sensor initialization.
-      @return initialization state:
-      @n      0:  sucess
-      @n      0xAA(170)：It means that the sensor has never been calibrated, and the sensor needs to be calibrated first.
-      @n      -1:  fail
-    '''
-    val = 0
-    val1 = 0
-    wait_for_timeout_s = 8
-    wait_for_timeout_inc_s = 0.1
-    count = 0
-    t = 0
-    self._enable_sensor(self._en)
-    #time.sleep(1)
-    if self._mode == self.eUART_DETECT_MODE:
-      if self._ser.isOpen == False:
-        print("serial is not open")
+    time.sleep(1)
+    if self._addr > 0xF7:
+      print("Invaild Device addr.")
+    if self._addr != 0:
+      if !self._detect_device_id(self._addr):
+        print("Device addr Error.")
         return -1
-      val1 = self._read_byte()
-      while val1 != ERR_CALIBRATION_CODE:
-        time.sleep(wait_for_timeout_inc_s)
-        t += wait_for_timeout_inc_s
-        #print("val1=%#x"%val1)
-        #print(type(val1))
-        val_h = (val1 >> 4) & 0x0F
-        val_l = val1 & 0x0F
-        if(val_h + val_l) == 0x0F:
-          #print("ok1")
-          return 0
-        if(t > wait_for_timeout_s):
-          #print("ok")
-          return 0
-        val1 = self._read_byte()
-    else:
-      if self._out == -1:
-        print("Error: _out = -1.")
+      if self._get_pid() != self.DEVICE_VID:
+        print("PID Error")
         return -1
-      GPIO.setup(self._out, GPIO.IN)
-      val = GPIO.input(self._out)
-      val1 = GPIO.input(self._out)
-      while val1 == val:
-        time.sleep(wait_for_timeout_inc_s)
-        t += wait_for_timeout_inc_s
-        if(t > wait_for_timeout_s):
-          
-          return 0
-        val1 = GPIO.input(self._out)
-      val = val1
-      for i in range(5):
-        time.sleep(wait_for_timeout_inc_s)
-        val1 = GPIO.input(self._out)
-        if (val + val1) == 1:
-          count = count + 1
-        val = val1
-        if count < 2:
-          return 0
-    return ERR_CALIBRATION_CODE
-    
-  def detect_water(self):
-    '''
-      @brief Detect the presence or absence of water.
-      @return water state:
-      @n      1: There is water at this location.
-      @n      0: There is no water at this location.
-    '''
-    flag = 0
-    val_h = 0
-    val_l = 0
-    if self._mode == self.eUART_DETECT_MODE:
-      val = self._read_byte()
-      #print("val=%#X"%val)
-      val_h = (val >> 4) & 0x0f
-      val_l = val & 0x0f
-      if (val_h + val_l) == 0x0f:
-        flag = val & 0x01
-    else:
-      flag = GPIO.input(self._out)
-    time.sleep(0.1)
-    return flag
+      if self._get_vid() != self.DEVICE_VID:
+        print("VID Error")
+        return -1
+    return 0
 
-  def get_sensitivity_level(self):
-    '''
-      @brief Get sensitivity level of the channel of sensor.
-      @n note:Before using this function,you need to self_check function to update sensitivity ache.
-      @return sensitivity level: 
-      @n      0:  Sensitivity level 0
-      @n     eSensitivityLevel0 or 0: Sensitivity level 1, the most Sensitivity level.
-      @n     eSensitivityLevel1 or 1: Sensitivity level 2
-      @n     eSensitivityLevel2 or 2: Sensitivity level 3
-      @n     eSensitivityLevel3 or 3: Sensitivity level 4
-      @n     eSensitivityLevel4 or 4: Sensitivity level 5
-      @n     eSensitivityLevel5 or 5: Sensitivity level 6
-      @n     eSensitivityLevel6 or 6: Sensitivity level 6
-      @n     eSensitivityLevel7 or 7: Sensitivity level 7,the least Sensitivity Level.
-      @n     0xFF                   : Error sensitivity level value
-    '''
-    if self._rslt_h +  self._rslt_l == 0xFF:
-      return ((self._rslt_l >> 5) & 0x07)
-    print("%#X = %#X"%(self._rslt_h, self._rslt_l))
-    return 0xff
-  
-  def get_calibration_mode(self):
-    '''
-      @brief Get calibration mode of sensor.
-      @n @n note:Before using this function,you need to self_heck function to update sensitivity ache.
-      @return Calibration mode:
-      @n      0 or CALIBRATION_MODE_LOWER_LEVEL: Only calibrate the lower water level.
-      @n      1 or CALIBRATION_MODE_LOWER_AND_UPPER_LEVEL: Calibrate the upper and lower water level.
-      @n      0xFF:   error mode.
-    '''
-    if self._rslt_h +  self._rslt_l == 0xFF:
-      return ((self._rslt_l >> 1) & 0x01)
-    return 0xff
-  
-  def get_calib_mode_description(self,mode):
-    '''
-      @brief Get calibration mode of sensor's description.
-      @param mode  calibration mode.
-      @n     CALIBRATION_MODE_LOWER_LEVEL or 0           :  only calibrate the lower water level.
-      @n     CALIBRATION_MODE_LOWER_AND_UPPER_LEVEL or 1 :  Up and down water level calibration.
-      @n     2~255                                       :  Error calibration mode
-      @return description: the string of calibration mode of sensor's description.
-    '''
-    str = ""
-    if mode == CALIBRATION_MODE_LOWER_LEVEL:
-      str = "Only calibrate the lower water level mode"
-    elif mode == CALIBRATION_MODE_LOWER_AND_UPPER_LEVEL:
-      str = "Up and down water level calibration mode"
+  '''
+    @brief 配置串口。
+    @param baud: 波特率，支持以下配置:
+    @n     BAUDRATE_2400      2400
+    @n     BAUDRATE_4800      4800
+    @n     BAUDRATE_9600      9600
+    @n     BAUDRATE_14400     14400
+    @n     BAUDRATE_19200     19200
+    @n     BAUDRATE_38400     38400
+    @n     BAUDRATE_57600     57600
+    @n     BAUDRATE_115200    115200
+    @param config: 数据位，校验位，停止位配置
+    @n     RS485_SERIAL_7E1    :7位数据位，偶校验，1位停止位
+    @n     RS485_SERIAL_7E1_5  :7位数据位，偶校验，1.5位停止位
+    @n     RS485_SERIAL_7E2    :7位数据位，偶校验，2位停止位
+    @n     RS485_SERIAL_7O1    :7位数据位，奇校验，1位停止位
+    @n     RS485_SERIAL_7O1_5  :7位数据位，奇校验，1.5位停止位
+    @n     RS485_SERIAL_7O2    :7位数据位，奇校验，2位停止位
+    @n     RS485_SERIAL_8N1    :8位数据位，无校验，1位停止位
+    @n     RS485_SERIAL_8N1_5  :8位数据位，无校验，1.5位停止位
+    @n     RS485_SERIAL_8N2    :8位数据位，无校验，2位停止位
+    @n     RS485_SERIAL_8E1    :8位数据位，偶校验，1位停止位
+    @n     RS485_SERIAL_8E1_5  :8位数据位，偶校验，1.5位停止位
+    @n     RS485_SERIAL_8E2    :8位数据位，偶校验，2位停止位
+    @n     RS485_SERIAL_8O1    :8位数据位，奇校验，1位停止位
+    @n     RS485_SERIAL_8O1_5  :8位数据位，奇校验，1.5位停止位
+    @n     RS485_SERIAL_8O2    :8位数据位，奇校验，2位停止位
+    @n     RS485_SERIAL_9N1    :9位数据位，无校验，1位停止位
+    @n     RS485_SERIAL_9N1_5  :9位数据位，无校验，1.5位停止位
+    @n     RS485_SERIAL_9N2    :9位数据位，无校验，2位停止位
+    @return 设置状态:
+    @n      True:  设置成功
+    @n      False: 设置失败
+  '''
+  def config_serial(self, baud, config):
+    l = [0x00, 0x00, (config >> 8) & 0xFF, config & 0xFF]
+    if baud == self.BAUDRATE_2400:
+      l[1] = 1
+    elif baud == self.BAUDRATE_4800:
+      l[1] = 2
+    elif baud == self.BAUDRATE_9600:
+      l[1] = 3
+    elif baud == self.BAUDRATE_14400:
+      l[1] = 4
+    elif baud == self.BAUDRATE_19200:
+      l[1] = 5
+    elif baud == self.BAUDRATE_38400:
+      l[1] = 6
+    elif baud == self.BAUDRATE_57600:
+      l[1] = 7
+    elif baud == self.BAUDRATE_115200:
+      l[1] = 8
     else:
-      str = "Error calibration mode"
-    return str
-
-  def self_check(self):
-    '''
-      @brief Self check to update  current sensitivity and calibration mode ache.
-      @note: In Level one-to-one detection mode: You must be connet EN/TSET/OUT and TX pin of sensor to raspberry pi's io pin and TX pin,for example:
-      @n                                         EN:    The IO pin of raspberry pi which is connected to the EN pin of Non-contact liquid level sensor.
-      @n                                         TEST:  The IO pin of raspberry pi which is connected to the TEST pin of Non-contact liquid level sensor.
-      @n                                         OUT:   The IO pin of raspberry pi which is connected to the OUT pin of Non-contact liquid level sensor.
-      @n                                         TX:    The UART RX pin of raspberry pi which is connected to the TX pin of Non-contact liquid level sensor.
-      @n In UART detection mode: You must be connect EN/TX/RX pin of sensor to raspberry pi's io/RX/TX pin, for example:
-      @n                         EN:    The IO pin of raspberry pi which is connected to the EN pin of Non-contact liquid level sensor.
-      @n                         TX:    The UART RX pin of raspberry pi which is connected to the TX pin of Non-contact liquid level sensor.
-      @n                         RX:    The UART TX pin of raspberry pi which is connected to the RX pin of Non-contact liquid level sensor.
-      @param en     The IO pin of MCU which is connected to the EN pin of Non-contact liquid level sensor.
-      @return selfCheck update state:
-      @n      True: update sucess, and you can call getSensitivity to get current sensitivity ,and to call getCalibrationMode to get current calibration mode.
-      @n      False: update fail.
-    '''
-    if self._mode == self.eUART_DETECT_MODE:
-      return self._uart_self_check(self._en)
-    else:
-      return self._io_self_check(self._en,self._test)
-  
-  def flush(self):
-    '''
-      @brief Clear recive buffer of UART, only use in UART deteceted mode.
-    '''
-    if self._mode == self.eUART_DETECT_MODE:
-      timenow = time.time()
-      count = self._ser.inWaiting()
-      if count != 0:
-        self._ser.read(count)
-  
-  def calibration(self):
-    '''
-      @brief Water level calibration, note: Before calibration, it is necessary to ensure that there is no water 
-      @n in the water detection area, and do not touch the water detection area.
-      @n In level one-to-one detection mode: You must use EN and TEST pin of the sensor can successfully calibrated.
-      @n In UART detected mode: You must use EN pin of the sensor can successfully calibrated.
-      @return Calibration state:
-      @n      true: Calibration sucess.
-      @n      false: Calibration fail.
-    '''
-    if self._mode == self.eUART_DETECT_MODE:
-      return self._uart_water_level_calibration(self._en, self.CALIB_UART_CMD_LWL)
-    else:
-      return self._io_water_level_cailibration(self._en,self._test, self.CALIB_IO_TIME_LWL)
-      
-  def check_calibration_state(self):
-    '''
-      @brief If you use calibration, you can call the function to detected that the calibration is completed.
-      @n Before using this function, you need to call LowerWaterLevelCalibration or LowerWaterLevelCalibration and UpperWaterLevelCalibration.
-      @return calibration state:
-      @n      true: calibration completed.
-      @n      false: calibration failed.
-    '''
-    val_h = 0
-    val_l = 0
-    wait_for_timeout_s = 1
-    wait_for_timeout_inc_s = 0.1
-    
-    t = 0
-    if self._mode == self.eUART_DETECT_MODE:
-      remain = self._ser.inWaiting()
-      #print("remian=%d"%remain)
-      if remain:
-        val1 = ord(self._ser.read(1))
-        while val1 != ERR_CALIBRATION_CODE:
-          time.sleep(wait_for_timeout_inc_s)
-          t = t + wait_for_timeout_inc_s
-          val_h = (val1 >> 4) & 0x0F
-          val_l = val1 & 0x0F
-          #print("val1=%#x, %#X, %#x"%(val1,val_h, val_l))
-          if val_h + val_l == 0x0f:
-            self.flush()
-            return True
-          if t > wait_for_timeout_s:
-            self.flush()
-            return True
-          remain = self._ser.inWaiting()
-          #print("remian=%d"%remain)
-          if remain:
-            val1 = ord(self._ser.read(1))
-    else:
-      val = GPIO.input(self._out)
-      val1 = GPIO.input(self._out)
-      while val == val1:
-        time.sleep(wait_for_timeout_inc_s)
-        t = t + wait_for_timeout_inc_s
-        if t > wait_for_timeout_s:
-          return True
-        val1 = GPIO.input(self._out)
-      val = val1
-      count = 5
-      while count:
-        time.sleep(wait_for_timeout_inc_s)
-        val1 = GPIO.input(self._out)
-        if val + val1 != 1:
-          return True
-        val = val1
-        count = count - 1
-      return False
-
-  def _uart_self_check(self, en):
-    if en < 0 or self._ser.isOpen == False:
-      return False
-    remain = 0
-    buf = [0,0]
-    self._enable_sensor(en)
-    self._write_data([self.SELF_CHECK_CMD])
-    time.sleep(1)
-    remain = self._ser.inWaiting()
-    #print("remain=%d"%remain)
-    #return True
-    
-    if remain >= 2:
-      buf[0] = ord(self._ser.read(1))
-      remain -= 1
-      while remain > 0:
-        buf[1] = ord(self._ser.read(1))
-        #print("buf[1] = %#X, buf[0]=%d"%buf[1])
-        remain = remain -1
-        if buf[0] + buf[1] == 0xFF:
-          self._rslt_h = buf[1]
-          self._rslt_l = buf[0]
-          return True
-        buf[0] = buf[1]
-    return False
-    
-  def _uart_water_level_calibration(self, en, cmd):
-    remain = 0
-    val = 0
-    if(en < 0):
-      return False
-    self._enable_sensor(en)
-    self._write_data([cmd])
-    cmd = ((cmd >> 4) | (cmd << 4)) & 0xFF
-    #print("cmd=%#x"%cmd)
-    time.sleep(1)
-    remain = self._ser.inWaiting()
-    #print("remain=%d"%remain)
-    while remain:
-      val = ord(self._ser.read(1))
-      #print("val=%#x"%val)
-      if val == cmd:
-        return True
-      remain = remain - 1
-    return False
-    
-  def _io_water_level_cailibration(self, en, test, t):
-    if en < 0 or test < 0 or self._out < 0:
-      return False
-    t1 = 0
-    curT = 0
-    interT1 = 0
-    interT2 = 0
-    GPIO.setup(test, GPIO.OUT)
-    GPIO.output(test, GPIO.HIGH)
-    self._enable_sensor(en)
-    GPIO.output(test, GPIO.LOW)
-    time.sleep(t)
-    GPIO.output(test, GPIO.HIGH)
-    t1 = time.time()
-    val1 = GPIO.input(self._out)
-    val = 0
-    curT = t1
-    while True:
-      val = GPIO.input(self._out)
-      if val != val1:
-        if val1:
-          if interT1 >= t - 0.01:
-            interT2 = time.time() - t1
-            if interT2 > 0.5:
-              return True
-            else:
-              interT1 = 0
-              interT2 = 0
-        else:
-          interT1 = time.time() - t1
-        t1= time.time()
-        val1 = val
-        time.sleep(0.005)
-        if time.time() - curT > 1000:
-          break
-    return False
-  
-  def _io_self_check(self, en, test):
-    ser = serial.Serial("/dev/ttyAMA0",9600)
-    if en < 0 or test < 0 or self._out < 0 or ser.isOpen == False:
-      return False
-    buf = [0,0]
-    GPIO.setup(test, GPIO.OUT)
-    GPIO.output(test, GPIO.HIGH)
-    self._enable_sensor(en)
-    GPIO.output(test, GPIO.LOW)
-    time.sleep(0.5)
-    GPIO.output(test, GPIO.HIGH)
-    time.sleep(0.55)
-    time.sleep(1)
-    remain = ser.inWaiting()
-    #print("remain=%d"%remain)
-    if remain >= 2:
-      buf[0] = ord(ser.read(1))
-      remain = remain - 1
-      while remain > 0:
-        buf[1] = ord(ser.read(1))
-        remain = remain -1
-        if buf[0] + buf[1] == 0xff:
-          self._rslt_h = buf[1]
-          self._rslt_l = buf[0]
-          return True
-        buf[0] =buf[1]
+      l[1] = 3
+    ret = self.write_holding_registers(self._addr, self.REG_UART_CTRL0, l)
+    if ret == 0:
+      return True
     return False
 
-  def _write_data(self, data):
-    self._ser.write(data)
+  '''
+    @brief 获取串口波特率配置
+    @return 返回串口波特率配置
+  '''
+  def get_serial_baud(self):
+    val = self.read_holding_register(self._addr, self.REG_UART_CTRL0)
+    baud = 0
+    if val == 1:
+      baud = 2400
+    elif val == 2:
+      baud = 4800
+    elif val == 3:
+      baud = 9600
+    elif val == 4:
+      baud = 14400
+    elif val == 5:
+      baud = 19200
+    elif val == 6:
+      baud = 38400
+    elif val == 7:
+      baud = 57600
+    elif val == 8:
+      baud = 115200
+    else:
+      baud = 9600
+    return baud
+  
+  '''
+    @brief 获取串口数据位、校验位、停止位配置
+    @return 返回串口数据位、校验位、停止位配置
+  '''
+  def get_serial_config(self):
+    val = self.read_holding_register(self._addr, self.REG_UART_CTRL1)
+    return val
 
-  def _read_byte(self):
-    data = 0
-    timenow = time.time()
-    while (time.time() - timenow) <= 1:
-      count = self._ser.inWaiting()
-      #print("count = %d"%count)
-      if count != 0:
-        l = self._ser.read(count)
-        
-        try: 
-          data = ord(l[count - 1])
-        except:
-          data = l[count - 1]
-        break
-    return data
+  '''
+    @brief 扫描位置0~7是否挂载18B20传感器。协议转换板最多能挂载8个18B20传感器，分别对应0~7的18B20配置
+    @return 返回8位状态位，从低到高分别代表0~7个传感器是否被挂载，某位置1代表对应的序号有传感器，置0代表无传感器。
+  '''
+  def scan(self):
+    l = self.read_holding_registers(self._addr, self.REG_ROM_FLAG, 1)
+    state = 0
+    if l[0] == 0:
+      state = l[1] & l[2]
+    return state
 
-  def _get_cs(self, data):
-    cs = 0
-    for i in data:
-      cs += i
-      #print(i)
-    cs = cs & 0xff
-    return cs
-    
-  def _enable_sensor(self, en):
-    if(en > -1):
-      GPIO.setup(en, GPIO.OUT)
-      GPIO.output(en, GPIO.LOW)
-      self.flush()
-      time.sleep(0.2)
-      GPIO.output(en, GPIO.HIGH)
-      time.sleep(1)
+  '''
+    @brief 设置设备地址。
+    @param newAddr: 设备地址，范围1~247。
+    @return 设置状态:
+    @n      True:  设置成功
+    @n      False: 设置失败
+  '''
+  def set_device_address(self, new_addr):
+    if new_addr < 1 or new_addr > 0xF7:
+      print("Error id")
+    ret = self.write_holding_register(self._addr, self.REG_DEVICE_ADDR, new_addr)
+    if(self._addr == 0):
+      time.sleep(0.1)
+      ret = self.read_holding_register(new_addr, self.REG_DEVICE_ADDR)
+    if ret == new_addr:
+      self._addr = new_addr
+      return True
+    return False
 
-class DFRobot_SCW8916B_UART(DFRobot_Nilometer):
-  def __init__(self,en = -1):
-    '''
-      @brief DFRobot_SCW8916B_UART abstract class constructor. Construct serial port detection object.(UART detection mode.)
-      @param en:  The IO pin of raspberry pi which is connected to the EN pin of Non-contact liquid level sensor. If you use self check and calibration fuction that you 
-      @n must using EN pin of sensor to connected to raspberry pi.
-    '''
-    self._mode = self.eUART_DETECT_MODE
-    self._ser = serial.Serial("/dev/ttyAMA0",9600)
-    self._en = en
-    DFRobot_Nilometer.__init__(self)
+  '''
+    @brief 获取设备地址。
+    @return 返回设备地址，范围1~247。
+  '''
+  def get_device_address(self):
+     return self._addr
+  
+  '''
+    @brief 设置18B20精度。
+    @return 精度:
+    @n      True:  设置成功
+    @n      False: 设置失败
+  '''
+  def set_18B20_accuracy(self, id, accuracy):
+    if id >= self.DS18B20_MAX_NUM:
+      print("id out of range(0~7)")
+      return False
+    ret = self.write_holding_register(self._addr, self.REG_18B20_NUM0_ACCURACY+id, accuracy)
+    if ret == accuracy:
+      return True
+    return False
+  
+  '''
+    @brief 获取18B20精度。
+    @return 精度:
+  '''
+  def get_18B20_accuracy(self, id):
+    if id >= self.DS18B20_MAX_NUM:
+      print("id out of range(0~7)")
+      return 0xFF
+    accuracy = self.read_holding_register(self._addr, self.REG_18B20_NUM0_ACCURACY+id)
+    accuracy = accuracy & 0xFF
+    return accuracy
 
-  def set_sensitivity_level(self, level):
-    '''
-       @brief Set sensitivity level of the channel of sensor.The higher the sensitivity level, the lower the sensitivity.Ranging 0~7.
-       @n note: This function only support eUARTDetecteMode, not using eLevelDetecteMode.
-       @param level:   the enum varible of eSensitivityLevel_t or 0~7
-       @n     eSensitivityLevel0 or 0: Sensitivity level 0, the most Sensitivity level.
-       @n     eSensitivityLevel1 or 1: Sensitivity level 1
-       @n     eSensitivityLevel2 or 2: Sensitivity level 2
-       @n     eSensitivityLevel3 or 3: Sensitivity level 3
-       @n     eSensitivityLevel4 or 4: Sensitivity level 4
-       @n     eSensitivityLevel5 or 5: Sensitivity level 5
-       @n     eSensitivityLevel6 or 6: Sensitivity level 6
-       @n     eSensitivityLevel7 or 7: Sensitivity level 7,the least Sensitivity Level.
-      
-       @return status: return config state.
-       @n      true:  Set sensitivity sucess.
-       @n      false:  Set sensitivity fail.
-    '''
-    buf = [0x43, level & 0x07, 7, 7, 7,0]
-    state = 0x53
-    wait_for_timeout_s = 2
-    wait_for_timeout_inc_s = 0.1
-    t = 0
-    count = 0
-    
-    buf[5] = self._get_cs(buf[1:5])
-    self._enable_sensor(self._en)
-    self._write_data(buf)
-    #print(buf)
+  '''
+    @brief 设置温度的上下阈值。
+    @param id: 第几个温度传感器，范围0~7。
+    @param tH: 设置温度的上阈值，范围-55~125℃
+    @param tL: 设置温度的下阈值，范围-55~125℃
+    @n note: 必须满足设置条件tH > tL
+    @return 设置状态:
+    @n      True:  设置成功
+    @n      False: 设置失败
+  '''
+  def set_temperature_threshold(self, id, th, tl):
+    if((id >= DS18B20_MAX_NUM) or (th < - 55) or (th > 125) or (tl < -55) or (tl > 125)):
+      return False
+    if th < 0:
+      th = ((~th) + 1)
+    if tl < 0:
+      tl = ((~tl) + 1)
+    val = (th << 8) | tl
+    ret = self.write_holding_register(self._addr, self.REG_18B20_NUM0_TH_TL+id, val)
+    if ret == val:
+      return True
+    return False
+  '''
+    @brief 获取温度的上下阈值。
+    @param id: 第几个温度传感器，范围0~7。
+    @return 16字节温度阈值:
+    @n      高字节:  存储温度的上阈值
+    @n      低字节:  存储温度的下阈值
+  '''
+  def get_temperature_threshold(self, id):
+    if((id >= DS18B20_MAX_NUM) or (th < - 55) or (th > 125) or (tl < -55) or (tl > 125)):
+      return False
+    val = self.read_holding_register(self._addr, self.REG_18B20_NUM0_TH_TL+id)
+    return val
 
-    while True:
-      remain = self._ser.inWaiting()
-      #print("remain = %d"%remain)
-      if remain:
-        val = ord(self._ser.read(1))
-        #print("val=%#X"%val)
-        if state == val:
-          self.flush()
-          return True
-      time.sleep(wait_for_timeout_inc_s)
-      t = t + wait_for_timeout_inc_s
-      if t > wait_for_timeout_s:
-        return False
-    
+  '''
+    @brief 获取协议转换板上挂载的18B20的个数。
+    @return 18B20设备数量，范围0~8：
+    @n      0：协议转换板上未挂载18B20传感器
+    @n      1: 协议转换板上挂载了1个18B20传感器
+    @n      ......
+    @n      8:  协议转换板上挂载了8个18B20传感器
+  '''
+  def get_18B20_number(self):
+    val = self.read_holding_register(self._addr, self.REG_18B20_NUM)
+    return val
 
+  '''
+    @brief 获取设备id的温度。
+    @param id：18B20挂载在总线上的id号，范围0~7
+    @return 温度:
+  '''
+  def get_temperature_c(self, id):
+    if id >= self.DS18B20_MAX_NUM:
+      print("id out of range(0~7)")
+      return 0.0
+    val = self.read_holding_register(self._addr, self.REG_18B20_NUM0_TEMP+id)
+    return val/16.0
+  
+  '''
+    @brief 获取18B20的ROM码。
+    @param id: 第几个温度传感器，范围0~7。
+    @param rom: 存放ROM码的指针。
+    @param len: 固定长度，必须为8字节
+    @return 读取状态:
+    @n      0:  获取成功
+    @n      others: 获取失败
+  '''
+  def get_18B20_rom(self, id):
+    if id >= self.DS18B20_MAX_NUM:
+      print("id out of range(0~7)")
+      return [0]*8
+    ret = self.read_holding_registers(self._addr, self.REG_18B20_NUM0_ADDR+id)
+    if ret[0] = 0:
+      return ret[1:]
+    return ret
 
-class DFRobot_SCW8916B_IO(DFRobot_Nilometer):
-  def __init__(self,out, en = -1, test = -1):
-    '''
-      @brief DFRobot_SCW8916B_IO abstract class constructor.Construction level one-to-one detection object.(Level one-to-one detection mode)
-      @param out:  The IO pin of raspberry pi which is connected to OUT pin of Non-contact liquid level sensor.
-      @param en:  The IO pin of raspberry pi which is connected to the EN pin of Non-contact liquid level sensor. If you use self check and calibration fuction that you 
-      @n must using EN pin of sensor to connected to raspberry pi.
-      @param test:  The IO pin of raspberry pi which is connected to TEST pin of Non-contact liquid level sensor.If you use self check and calibration fuction that you 
-      @n must using TEST pin of sensor to connected to raspberry pi.
-    '''
-    self._out = out
-    self._en = en
-    self._test = test
-    self._mode = self.eLEVEL_DETECT_MODE
-    DFRobot_Nilometer.__init__(self)
+  def _get_pid(self):
+    val = self.read_holding_register(self._addr, self.REG_PID)
+    return val
+
+  def _get_vid(self):
+    val = self.read_holding_register(self._addr, self.REG_VID)
+    return val
+
+  def _detect_device_id(self, addr):
+    val = self.read_holding_register(self._addr, self.REG_DEVICE_ADDR)
+    if (val & 0xFF) == addr:
+      return True
+    return False
 
 

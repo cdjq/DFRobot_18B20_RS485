@@ -1,10 +1,9 @@
-from __future__ import print_function
 # -*- coding:utf-8 -*-
 
 '''
-  # demo_detect.py
+  # demo_scan_sensor.py
   #
-  # @brief 获取18B20转RS485协议板上所有DS18B20的温度信息,未更改前，默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位。
+  # @brief 扫描协议转换板上挂载的18B20传感器，并读出相应的配置值.
   #
   # @n connected
   # -----------------------------------------------------------------------------
@@ -43,10 +42,18 @@ if __name__ == "__main__":
   
   ds18b20_num = 0;
   while True:
-    ds18b20_num = board.get_18B20_number()
+    state = board.scan()
     id = 0
-    while i < DS18B20_MAX_NUM:
-      t = board.get_temperature(id)
-      print("id: %d   Temperature: %f"%(id, t))
+    while id < DS18B20_MAX_NUM:
+      if state & (1 << id):
+        print("id: "%id)
+        rom = board.get_18B20_rom(id)
+        lin = ['%02X' % i for i in package]
+        print(" ".join(lin))
+        threshold = board.get_temperature_threshold(id)
+        print("Threshold: "%Threshold)
+        accuracy = board.get_18B20_accuracy(id)
+        t = board.get_temperature(id)
+        print("Temperature: %f"%t)
       time.sleep(1)
     print("\n")

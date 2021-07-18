@@ -168,10 +168,10 @@ public:
  * @n     RS485_SERIAL_9N1_5  :9位数据位，无校验，1.5位停止位
  * @n     RS485_SERIAL_9N2    :9位数据位，无校验，2位停止位
  * @return 设置状态:
- * @n      0:  设置成功
- * @n      others: 设置失败
+ * @n      true:  设置成功
+ * @n      false: 设置失败
  */
-  uint8_t configSerial(uint32_t baud, uint16_t config);
+  bool configSerial(uint32_t baud, uint16_t config);
   
   bool readSerialConfig(uint32_t *baud, uint16_t *config);
 /**

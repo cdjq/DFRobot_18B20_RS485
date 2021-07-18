@@ -1,10 +1,11 @@
-from __future__ import print_function
 # -*- coding:utf-8 -*-
 
 '''
-  # demo_detect.py
+  # demo_config.py
   #
-  # @brief 获取18B20转RS485协议板上所有DS18B20的温度信息,未更改前，默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位。
+  # @brief 通过广播地址(RTU_BROADCAST_ADDRESS(0x00))配置协议转换板的modbus地址和串口。将modbus地址配置为0x20，并将串口配置为
+  # @n 9600波特率，8位数据位，无校验位，1位停止位。（串口配置必须掉电重启后才能生效）设备地址和串口配置掉电不会丢失。
+  # @n 注意：所有从机都会处理广播包，但不会响应。
   #
   # @n connected
   # -----------------------------------------------------------------------------
@@ -30,7 +31,7 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from DFRobot_18B20_RS485 import *
 
-board = DFRobot_18B20_RS485(0x20)
+board = DFRobot_18B20_RS485(0x00)
 
 if __name__ == "__main__":
   print("Initialization board...", end = " ")
@@ -41,12 +42,6 @@ if __name__ == "__main__":
     print("Initialization board...", end = " ")
   print("done.")
   
-  ds18b20_num = 0;
-  while True:
-    ds18b20_num = board.get_18B20_number()
-    id = 0
-    while i < DS18B20_MAX_NUM:
-      t = board.get_temperature(id)
-      print("id: %d   Temperature: %f"%(id, t))
-      time.sleep(1)
-    print("\n")
+  board.config_serial(board.BAUDRATE_9600, board.RS485_SERIAL_8N1)
+  board.set_device_address(0x20)
+  print("New device addr : 0x%02X"board.get_device_address())
