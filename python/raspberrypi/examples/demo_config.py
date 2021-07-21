@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+from __future__ import print_function
 
 '''
   # demo_config.py
@@ -44,4 +45,4 @@ if __name__ == "__main__":
   
   board.config_serial(board.BAUDRATE_9600, board.RS485_SERIAL_8N1)
   board.set_device_address(0x20)
-  print("New device addr : 0x%02X"board.get_device_address())
+  print("New device addr : 0x%02X"%board.get_device_address())

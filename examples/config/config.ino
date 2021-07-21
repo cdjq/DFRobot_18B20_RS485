@@ -24,7 +24,11 @@
 #include <SoftwareSerial.h>
 #endif
 
-
+/**
+ * @brief DFRobot_18B20_UART构造函数
+ * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
+ * @param s   : 指向Stream流的串口指针
+ */
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
   SoftwareSerial mySerial(/*rx =*/4, /*tx =*/5);
   DFRobot_18B20_UART board(/*addr =*/RTU_BROADCAST_ADDRESS, /*s =*/&mySerial);

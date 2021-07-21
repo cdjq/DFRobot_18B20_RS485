@@ -278,7 +278,9 @@ class DFRobot_RTU:
     l = self._packed(id, self.eCMD_READ_HOLDING, l)
     self._send_package(l)
     l = self.recv_and_parse_package(id, self.eCMD_READ_HOLDING,size*2)
-    if (l[0] == 0) and (len(l) == (5+size+1)):
+    #lin = ['%02X' % i for i in l]
+    #print(" ".join(lin))
+    if (l[0] == 0) and (len(l) == (5+size*2+1)):
       la = [l[0]] + l[4: len(l)-2]
       return la
     return [l[0]]
@@ -301,8 +303,8 @@ class DFRobot_RTU:
       @n      10 or eRTU_MEMORY_ERROR: Memory error.
       @n      11 or eRTU_ID_ERROR: Broadcasr address or error ID
     '''
-    size = len(data)
-    l = [(reg >> 8)&0xFF, (reg & 0xFF), (((size/2) >> 8) & 0xFF), ((size/2) & 0xFF), size] + data
+    size = len(data) >> 1
+    l = [(reg >> 8)&0xFF, (reg & 0xFF), ((size >> 8) & 0xFF), (size & 0xFF), size*2] + data
     if(id > 0xF7):
       print("device addr error.")
       return 0
@@ -331,8 +333,8 @@ class DFRobot_RTU:
       @n      10 or eRTU_MEMORY_ERROR: Memory error.
       @n      11 or eRTU_ID_ERROR: Broadcasr address or error ID
     '''
-    size = len(data)/2
-    l = [(reg >> 8)&0xFF, (reg & 0xFF), (((size/2) >> 8) & 0xFF), ((size/2) & 0xFF), size] + data
+    size = len(data) >> 1
+    l = [(reg >> 8)&0xFF, (reg & 0xFF), ((size >> 8) & 0xFF), (size & 0xFF), size*2] + data
     if(id > 0xF7):
       print("device addr error.")
       return 0
@@ -378,8 +380,8 @@ class DFRobot_RTU:
     package[length-2] = (crc >> 8) & 0xFF
     package[length-1] = crc & 0xFF
     
-    lin = ['%02X' % i for i in package]
-    print(" ".join(lin))
+    #lin = ['%02X' % i for i in package]
+    #print(" ".join(lin))
     return package;
 
   def _send_package(self, l):

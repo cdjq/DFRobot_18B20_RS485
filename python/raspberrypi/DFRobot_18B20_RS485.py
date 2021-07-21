@@ -138,10 +138,10 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     if self._addr > 0xF7:
       print("Invaild Device addr.")
     if self._addr != 0:
-      if !self._detect_device_id(self._addr):
+      if self._detect_device_id(self._addr) != True:
         print("Device addr Error.")
         return -1
-      if self._get_pid() != self.DEVICE_VID:
+      if self._get_pid() != self.DEVICE_PID:
         print("PID Error")
         return -1
       if self._get_vid() != self.DEVICE_VID:
@@ -250,7 +250,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
   def scan(self):
     l = self.read_holding_registers(self._addr, self.REG_ROM_FLAG, 1)
     state = 0
-    if l[0] == 0:
+    if (l[0] == 0) and (len(l) == 3):
       state = l[1] & l[2]
     return state
 
@@ -318,7 +318,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     @n      False: 设置失败
   '''
   def set_temperature_threshold(self, id, th, tl):
-    if((id >= DS18B20_MAX_NUM) or (th < - 55) or (th > 125) or (tl < -55) or (tl > 125)):
+    if((id >= self.DS18B20_MAX_NUM) or (th < - 55) or (th > 125) or (tl < -55) or (tl > 125)):
       return False
     if th < 0:
       th = ((~th) + 1)
@@ -337,7 +337,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     @n      低字节:  存储温度的下阈值
   '''
   def get_temperature_threshold(self, id):
-    if((id >= DS18B20_MAX_NUM) or (th < - 55) or (th > 125) or (tl < -55) or (tl > 125)):
+    if(id >= self.DS18B20_MAX_NUM) :
       return False
     val = self.read_holding_register(self._addr, self.REG_18B20_NUM0_TH_TL+id)
     return val
@@ -379,8 +379,8 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     if id >= self.DS18B20_MAX_NUM:
       print("id out of range(0~7)")
       return [0]*8
-    ret = self.read_holding_registers(self._addr, self.REG_18B20_NUM0_ADDR+id)
-    if ret[0] = 0:
+    ret = self.read_holding_registers(self._addr, self.REG_18B20_NUM0_ADDR+id, 4)
+    if ret[0] == 0:
       return ret[1:]
     return ret
 

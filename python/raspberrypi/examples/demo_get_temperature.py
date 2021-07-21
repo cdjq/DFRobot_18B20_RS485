@@ -1,5 +1,5 @@
-from __future__ import print_function
 # -*- coding:utf-8 -*-
+from __future__ import print_function
 
 '''
   # demo_detect.py
@@ -45,8 +45,9 @@ if __name__ == "__main__":
   while True:
     ds18b20_num = board.get_18B20_number()
     id = 0
-    while i < DS18B20_MAX_NUM:
-      t = board.get_temperature(id)
+    while id < board.DS18B20_MAX_NUM:
+      t = board.get_temperature_c(id)
       print("id: %d   Temperature: %f"%(id, t))
       time.sleep(1)
+      id += 1
     print("\n")

@@ -126,15 +126,18 @@ public:
 #define DS18B20_ACCURACY_10_BIT  1
 #define DS18B20_ACCURACY_11_BIT  2
 #define DS18B20_ACCURACY_12_BIT  3
-
-  DFRobot_18B20_RS485(uint8_t addr, Stream *s);//eUARTDetecteMode
+/**
+ * @brief  DFRobot_18B20_RS485构造函数
+ * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
+ * @param s   : 指向Stream流的串口指针
+ */
+  DFRobot_18B20_RS485(uint8_t addr, Stream *s);
   ~DFRobot_18B20_RS485();
 /**
  * @brief 传感器设备初始化。
  * @return initialization state:
  * @n      0:  sucess
- * @n      -1：failed,未接入设备，协议转化板至少要挂载一个18B20设备
- * @n      -2: failed,接入设备过多，协议转化板最多只能挂载8个18B20设备
+ * @n      -1：failed
  */
   int begin();
 /**
@@ -172,11 +175,34 @@ public:
  * @n      false: 设置失败
  */
   bool configSerial(uint32_t baud, uint16_t config);
-  
+/**
+ * @brief 读取协议转换板的串口配置
+ * @param baud: 获取协议转换板串口的波特率配置（不修改，默认配置位9600），可能为如下配置：
+ * @n     BAUDRATE_2400      2400
+ * @n     BAUDRATE_4800      4800
+ * @n     BAUDRATE_9600      9600
+ * @n     BAUDRATE_14400     14400
+ * @n     BAUDRATE_19200     19200
+ * @n     BAUDRATE_38400     38400
+ * @n     BAUDRATE_57600     57600
+ * @n     BAUDRATE_115200    115200
+ * @param config: 获取协议转换板串口的数据位，校验位，和停止位配置，结果解析如下
+ * @n ---------------------------------------------------------------------------------------------------------------------
+ * @n bit15 | bit14 | bit13 | bit12 | bit11 | bit10 | bit9 | bit8 | bit7 | bit6 | bit5 | bit4 | bit3 | bit2 | bit1 | bit0 | 
+ * @n ---------------------------------------------------------------------------------------------------------------------
+ * @n              invaild                                 |       Data bit     |       parity       |       stopbit      |
+ * @n ---------------------------------------------------------------------------------------------------------------------
+ * @n  stopbit:  000-无停止位    001-1位停止位    010-2位停止位
+ * @n  parity:   000-无校验      001-偶校验       010-奇校验
+ * @n  Data bit: 000-7位数据位   001-8位数据位    010-9位数据位
+ * @return 返回读取状态：
+ * @n      true： 成功读取
+ * @n      false: 读取失败
+ */ 
   bool readSerialConfig(uint32_t *baud, uint16_t *config);
 /**
- * @brief 扫描位置0~7是否挂载18B20传感器。协议转换板最多能挂载8个18B20传感器，分别对应0~7的18B20配置
- * @return 返回8位状态位，从低到高分别代表0~7个传感器是否被挂载，某位置1代表对应的序号有传感器，置0代表无传感器。
+ * @brief 扫描协议转换板位置0~7是否挂载真实的18B20传感器设备
+ * @return 返回8位状态位，从低到高分别代表位置0~7是否有传感器挂载，1代表对应的序号位有传感器，0代表对应序号位无传感器。
  */
   uint8_t scan();
 /**
@@ -193,22 +219,55 @@ public:
  */
   uint8_t getDeviceAddress();
 /**
- * @brief 设置18B20精度。
- * @param id: ds18b20序号，范围0~7
+ * @brief 设置序号为id的18B20温度传感器的精度。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
  * @param accuracy：精度设置
+ * @n      DS18B20_ACCURACY_9_BIT  or 0: 将序号为id的DS8B20的精度设置为9位
+ * @n      DS18B20_ACCURACY_10_BIT or 1: 将序号为id的DS8B20的精度设置为10位
+ * @n      DS18B20_ACCURACY_11_BIT or 2: 将序号为id的DS8B20的精度设置为11位
+ * @n      DS18B20_ACCURACY_12_BIT or 3: 将序号为id的DS8B20的精度设置为12位
  * @return 设置状态:
- * @n      0:  设置成功
- * @n      others: 设置失败
+ * @n      true:  设置成功
+ * @n      false: 设置失败
  */
   bool set18B20Accuracy(uint8_t id, uint8_t accuracy);
 /**
- * @brief 设置18B20精度。
+ * @brief 获取序号为id的18B20温度传感器的精度。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
  * @return 精度:
+ * @n      DS18B20_ACCURACY_9_BIT  or 0: 序号为id的DS8B20对应的精度设置为9位
+ * @n      DS18B20_ACCURACY_10_BIT or 1: 序号为id的DS8B20对应的精度设置为10位
+ * @n      DS18B20_ACCURACY_11_BIT or 2: 序号为id的DS8B20对应的精度设置为11位
+ * @n      DS18B20_ACCURACY_12_BIT or 3: 序号为id的DS8B20对应的精度设置为12位
  */
   uint8_t get18B20Accuracy(uint8_t id);
 /**
- * @brief 设置温度的上下阈值。
- * @param id: 第几个温度传感器，范围0~7。
+ * @brief 设置序号为id的温度传感器的上下温度阈值。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
  * @param tH: 设置温度的上阈值，范围-55~125℃
  * @param tL: 设置温度的下阈值，范围-55~125℃
  * @n note: 必须满足设置条件tH > tL
@@ -218,19 +277,35 @@ public:
  */
   bool setTemperatureThreshold(uint8_t id, int8_t tH, int8_t tL);
 /**
- * @brief 获取温度的上下阈值。
- * @param id: 第几个温度传感器，范围0~7。
- * @param tH: 存储温度的上阈值
- * @param tL: 存储温度的下阈值
+ * @brief 获取序号为id的温度传感器的上下温度阈值。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
+ * @param tH: 存储温度的上阈值，范围-55~125℃
+ * @param tL: 存储温度的下阈值，范围-55~125℃
  * @return 设置状态:
  * @n      true:  获取成功
  * @n      false: 获取失败
  */
   bool getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL);
 /**
- * @brief 获取18B20的ROM码。
- * @param id: 第几个温度传感器，范围0~7。
- * @param rom: 存放ROM码的指针。
+ * @brief 获取序号为id的温度传感器的ROM码。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
+ * @param rom: 存放ROM码的指针, 全为0代表无效ROM。
  * @param len: 固定长度，必须为8字节
  * @return 读取状态:
  * @n      true:  获取成功
@@ -239,8 +314,16 @@ public:
   bool get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len = 8);
   
 /**
- * @brief 获取设备id的温度。
- * @param id：18B20挂载在总线上的id号，范围0~7
+ * @brief 获取序号为id的18B20的温度数据，单位：摄氏度(℃)。
+ * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+ * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+ * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+ * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+ * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+ * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+ * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+ * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+ * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
  * @return 温度:
  */
   float getTemperatureC(uint8_t id);
@@ -253,15 +336,6 @@ public:
  * @n      8:  协议转换板上挂载了8个18B20传感器
  */
   uint8_t get18B20Number();
-/**
- * @brief 判断设备是否存在？如果存在将存储该设备的64位ROM码。
- * @param id：18B20挂载在总线上的id号，范围0~7
- * @param rom: 64位（8字节）18B20的ROM码，用来区分同一总线上的设备。
- * @return 设备存在状态
- * @n      true:  该设备存在
- * @n      false：该设备不存在
- */
-  bool exist(uint8_t id, uint8_t rom[8]);
 
 protected:
   uint16_t getPID();
@@ -275,11 +349,9 @@ private:
 class DFRobot_18B20_UART: public DFRobot_18B20_RS485{
 public:
 /**
- * @brief DFRobot_18B20_UART abstract class constructor. 配置从机的设备地址，以及串口
- * @param addr:  
- * @param s:  The class pointer object of Abstract class， here you can fill in the pointer to the serial port object
- * @param en: The IO pin of MCU which is connected to the EN pin of Non-contact liquid level sensor.when you call selfCheck,
- * @n setSensitivityLevel, LowerWaterLevelCalibration,or UpperWaterLevelCalibration function, you must use EN pin.
+ * @brief DFRobot_18B20_UART构造函数
+ * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
+ * @param s   : 指向Stream流的串口指针
  */
   DFRobot_18B20_UART(uint8_t addr, Stream *s);
 };

@@ -20,13 +20,7 @@ DFRobot_18B20_RS485::DFRobot_18B20_RS485(uint8_t addr,Stream *s)
   
 }
 DFRobot_18B20_RS485::~DFRobot_18B20_RS485(){}
-/**
- * @brief 传感器设备初始化。
- * @return initialization state:
- * @n      0:  sucess
- * @n      -1：failed,未接入设备，协议转化板至少要挂载一个18B20设备
- * @n      -2: failed,接入设备过多，协议转化板最多只能挂载8个18B20设备
- */
+
 int DFRobot_18B20_RS485::begin(){
   delay(2000);//wait for 1s
   if(_addr > 0xF7){
@@ -52,8 +46,8 @@ int DFRobot_18B20_RS485::begin(){
   return 0;
 }
 
-uint8_t DFRobot_18B20_RS485::configSerial(uint32_t baud, uint16_t config){
-  uint8_t data[] = {0x00, 0x00, (uint8_t)(config>>8)&0xFF, (uint8_t)(config&0xFF)};
+bool DFRobot_18B20_RS485::configSerial(uint32_t baud, uint16_t config){
+  uint8_t data[] = {0x00, 0x00, (uint8_t)((config>>8)&0xFF), (uint8_t)(config&0xFF)};
   switch(baud){
       case BAUDRATE_2400:
            data[1] = 1;
@@ -84,7 +78,8 @@ uint8_t DFRobot_18B20_RS485::configSerial(uint32_t baud, uint16_t config){
            break;
   }
   uint8_t ret = writeHoldingRegister(_addr, REG_UART_CTRL0, data, sizeof(data));
-  return ret;
+  if(ret == 0) return true;
+  else return false;
 }
 
 bool DFRobot_18B20_RS485::readSerialConfig(uint32_t *baud, uint16_t *config){
@@ -203,38 +198,15 @@ bool DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t *rom, uint8_t len){
   return false;
 }
   
-/**
- * @brief 获取设备id的温度。
- * @param id：18B20挂载在总线上的id号，范围0~7
- * @return 温度:
- */
 float DFRobot_18B20_RS485::getTemperatureC(uint8_t id){
   if(id >= DS18B20_MAX_NUM) return 0.0;
   uint16_t temp = readHoldingRegister(_addr, REG_18B20_NUM0_TEMP+id);
   return temp/16.0;
 }
-/**
- * @brief 获取协议转换板上挂载的18B20的个数。
- * @return 18B20设备数量，范围0~8：
- * @n      0：协议转换板上未挂载18B20传感器
- * @n      1: 协议转换板上挂载了1个18B20传感器
- * @n      ......
- * @n      8:  协议转换板上挂载了8个18B20传感器
- */
+
 uint8_t DFRobot_18B20_RS485::get18B20Number(){
   uint8_t num = (uint8_t)readHoldingRegister(_addr, REG_18B20_NUM);
   return num;
-}
-/**
- * @brief 判断设备是否存在？如果存在将存储该设备的64位ROM码。
- * @param id：18B20挂载在总线上的id号，范围0~7
- * @param rom: 64位（8字节）18B20的ROM码，用来区分同一总线上的设备。
- * @return 设备存在状态
- * @n      true:  该设备存在
- * @n      false：该设备不存在
- */
-bool DFRobot_18B20_RS485::exist(uint8_t id, uint8_t rom[8]){
-  return false;
 }
 
 uint16_t DFRobot_18B20_RS485::getPID(){

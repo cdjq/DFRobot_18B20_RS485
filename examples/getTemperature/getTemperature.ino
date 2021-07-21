@@ -22,7 +22,11 @@
 #include <SoftwareSerial.h>
 #endif
 
-
+/**
+ * @brief DFRobot_18B20_UART构造函数
+ * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
+ * @param s   : 指向Stream流的串口指针
+ */
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
   SoftwareSerial mySerial(/*rx =*/4, /*tx =*/5);
   DFRobot_18B20_UART board(/*addr =*/DEFAULT_DEVICE_ADDRESS, /*s =*/&mySerial);
@@ -65,6 +69,19 @@ void loop() {
       Serial.print("id: ");
       Serial.print(id);
       Serial.print("\tTemperature: ");
+      /**
+       * @brief 获取序号为id的18B20的温度数据，单位：摄氏度(℃)。
+       * @param id: 范围0~7，依次对应0~7号DS18B20传感器
+       * @n     DS18B20_NUM0_ID  or  0: 第0号DS18B20传感器
+       * @n     DS18B20_NUM1_ID  or  1: 第1号DS18B20传感器
+       * @n     DS18B20_NUM2_ID  or  2: 第2号DS18B20传感器
+       * @n     DS18B20_NUM3_ID  or  3: 第3号DS18B20传感器
+       * @n     DS18B20_NUM4_ID  or  4: 第4号DS18B20传感器
+       * @n     DS18B20_NUM5_ID  or  5: 第5号DS18B20传感器
+       * @n     DS18B20_NUM6_ID  or  6: 第6号DS18B20传感器
+       * @n     DS18B20_NUM7_ID  or  7: 第7号DS18B20传感器
+       * @return 温度:
+       */
       Serial.println(board.getTemperatureC(/*id= */id));
       delay(1000);
   }

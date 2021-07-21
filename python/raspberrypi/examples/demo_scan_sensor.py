@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+from __future__ import print_function
 
 '''
   # demo_scan_sensor.py
@@ -44,16 +45,18 @@ if __name__ == "__main__":
   while True:
     state = board.scan()
     id = 0
-    while id < DS18B20_MAX_NUM:
+    while id < board.DS18B20_MAX_NUM:
       if state & (1 << id):
-        print("id: "%id)
+        print("id: %d"%id)
         rom = board.get_18B20_rom(id)
-        lin = ['%02X' % i for i in package]
+        lin = ['%02X' % i for i in rom]
+        print("ROM: ",end = '')
         print(" ".join(lin))
         threshold = board.get_temperature_threshold(id)
-        print("Threshold: "%Threshold)
+        print("Threshold: %x"%threshold)
         accuracy = board.get_18B20_accuracy(id)
-        t = board.get_temperature(id)
+        t = board.get_temperature_c(id)
         print("Temperature: %f"%t)
       time.sleep(1)
+      id += 1
     print("\n")
