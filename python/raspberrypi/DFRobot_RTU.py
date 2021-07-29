@@ -15,7 +15,7 @@ import sys
 import serial
 import time
 
-class DFRobot_RTU:
+class DFRobot_RTU(object):
   
   _packet_header = {"id": 0, "cmd": 1, "cs": 0}
   
@@ -47,40 +47,6 @@ class DFRobot_RTU:
     '''
     self._ser = serial.Serial("/dev/ttyAMA0",baud, bits, parity, stopbit)
 
-  def read_coils_register_bit(self, id, reg, position):
-    '''
-      @brief Read the bit of the coils Register.
-      @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
-      @n          but will not answer.
-      @param reg: Coils register address.
-      @param position: The bit position of Coils register value. Range: 0~15
-      @return Return the positon bit of Coils register value.
-      @n      True:  The position of Coils register bit is 1.
-      @n      False:  The position of Coils register bit is 0.
-    '''
-    val = self.read_coils_register(id, reg)
-    if (val & (1 << position)):
-      return True
-    else:
-      return False
-    
-  def read_discrete_inputs_register_bit(self, id, reg, position):
-    '''
-      @brief Read the bit of the discrete inputs register.
-      @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
-      @n          but will not answer.
-      @param reg: Discrete inputs register.
-      @param position: The bit position of discrete inputs register value. Range: 0~15
-      @return Return the positon bit of discrete inputs register value.
-      @n      True:  The position of Coils register bit is 1.
-      @n      False:  The position of Coils register bit is 0.
-    '''
-    val = self.read_discrete_inputs_register(id, reg)
-    if (val & (1 << position)):
-      return True
-    else:
-      return False
-    
   def read_coils_register(self, id, reg):
     '''
       @brief Read a coils Register.
@@ -88,19 +54,21 @@ class DFRobot_RTU:
       @n          but will not answer.
       @param reg: Coils register address.
       @return Return the value of the coils register value.
+      @n      True: The value of the coils register value is 1.
+      @n      False: The value of the coils register value is 0.
     '''
     l = [(reg >> 8)&0xFF, (reg & 0xFF), 0x00, 0x01]
+    val = False
     if(id > 0xF7):
       print("device addr error.")
       return 0
     l = self._packed(id, self.eCMD_READ_COILS, l)
     self._send_package(l)
-    l = self.recv_and_parse_package(id, self.eCMD_READ_COILS,2)
-    if (l[0] == 0) and len(l) == 8:
-      l[0] = ((l[4] << 8) | l[5]) & 0xFFFF
-    else:
-      l[0] = 0
-    return l[0]
+    l = self.recv_and_parse_package(id, self.eCMD_READ_COILS,1)
+    if (l[0] == 0) and len(l) == 7:
+      if (l[4] & 0x01) != 0:
+          val = True
+    return val
       
   def read_discrete_inputs_register(self, id, reg):
     '''
@@ -108,20 +76,22 @@ class DFRobot_RTU:
       @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
       @n          but will not answer.
       @param reg: Discrete input register address.
-      @return Return the value of the discrete input register.
+      @return Return the value of the discrete input register value.
+      @n      True: The value of the discrete input register value is 1.
+      @n      False: The value of the discrete input register value is 0.
     '''
     l = [(reg >> 8)&0xFF, (reg & 0xFF), 0x00, 0x01]
+    val = False
     if(id > 0xF7):
       print("device addr error.")
       return 0
     l = self._packed(id, self.eCMD_READ_DISCRETE, l)
     self._send_package(l)
-    l = self.recv_and_parse_package(id, self.eCMD_READ_DISCRETE,2)
-    if (l[0] == 0) and len(l) == 8:
-      l[0] = ((l[4] << 8) | l[5]) & 0xFFFF
-    else:
-      l[0] = 0
-    return l[0]
+    l = self.recv_and_parse_package(id, self.eCMD_READ_DISCRETE,1)
+    if (l[0] == 0) and len(l) == 7:
+      if (l[4] & 0x01) != 0:
+          val = True
+    return val
       
   def read_holding_register(self, id, reg):
     '''
@@ -144,17 +114,21 @@ class DFRobot_RTU:
       l[0] = 0
     return l[0]
       
-  def write_coils_register(self, id, reg, val):
+  def write_coils_register(self, id, reg, flag):
     '''
       @brief Write a coils Register.
       @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
       @n          but will not answer.
       @param reg: Coils register address.
-      @param val: write value.
-      @return Return the value of the coils register write.
+      @param flag: The value of the register value which will be write, 0 ro 1.
+      @return Return the value of the coils register write, 0 ro 1.
     '''
+    val = 0x0000
+    re = True
+    if flag:
+      val = 0xFF00
+      re = False
     l = [(reg >> 8)&0xFF, (reg & 0xFF), (val >> 8)&0xFF, (val & 0xFF)]
-    val = 0
     if(id > 0xF7):
       print("device addr error.")
       return 0
@@ -162,8 +136,12 @@ class DFRobot_RTU:
     self._send_package(l)
     l = self.recv_and_parse_package(id, self.eCMD_WRITE_COILS,reg)
     if (l[0] == 0) and len(l) == 9:
-      val = ((l[5] << 8) | l[6]) & 0xFFFF
-    return val
+      if val == (((l[5] << 8) | l[6]) & 0xFFFF):
+        re = flag
+    if re:
+      return True
+    else:
+      return False
       
 
   def write_holding_register(self, id, reg, val):
@@ -187,13 +165,13 @@ class DFRobot_RTU:
       val = ((l[5] << 8) | l[6]) & 0xFFFF
     return val
       
-  def read_coils_registers(self, id, reg, size):
+  def read_coils_registers(self, id, reg, reg_num):
     '''
       @brief Read multiple coils Register.
       @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
       @n          but will not answer.
       @param reg: Read the start address of the coil register.
-      @param len: Number of read coil registers.
+      @param reg_num: Number of coils Register.
       @return list: format as follow:
       @n      list[0]: Exception code:
       @n               0 : sucess.
@@ -207,25 +185,29 @@ class DFRobot_RTU:
       @n               11 or eRTU_ID_ERROR: Broadcasr address or error ID
       @n      list[1:]: The value of the coil register list.
     '''
-    l = [(reg >> 8)&0xFF, (reg & 0xFF), (size >> 8) & 0xFF, size & 0xFF]
+    length = reg_num // 8
+    mod = reg_num % 8
+    if mod:
+      length += 1
+    l = [(reg >> 8)&0xFF, (reg & 0xFF), (reg_num >> 8) & 0xFF, reg_num & 0xFF]
     if(id > 0xF7):
       print("device addr error.")
       return [self.eRTU_ID_ERROR]
     l = self._packed(id, self.eCMD_READ_COILS, l)
     self._send_package(l)
-    l = self.recv_and_parse_package(id, self.eCMD_READ_COILS,size*2)
-    if ((l[0] == 0) and (len(l) == (5+size+1))):
+    l = self.recv_and_parse_package(id, self.eCMD_READ_COILS,length)
+    if ((l[0] == 0) and (len(l) == (5+length+1))):
       la = [l[0]] + l[4: len(l)-2]
       return la
     return [l[0]]
     
-  def read_discrete_inputs_registers(self, id, reg, size):
+  def read_discrete_inputs_registers(self, id, reg, reg_num):
     '''
       @brief Read multiple discrete inputs register.
       @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
       @n          but will not answer.
       @param reg: Read the start address of the discrete inputs register.
-      @param len: Number of read discrete inputs register.
+      @param reg_num: Number of coils Register.
       @return list: format as follow:
       @n      list[0]: Exception code:
       @n               0 : sucess.
@@ -239,14 +221,18 @@ class DFRobot_RTU:
       @n               11 or eRTU_ID_ERROR: Broadcasr address or error ID
       @n      list[1:]: The value list of the discrete inputs register.
     '''
-    l = [(reg >> 8)&0xFF, (reg & 0xFF), (size >> 8) & 0xFF, size & 0xFF]
+    length = reg_num // 8
+    mod = reg_num % 8
+    if mod:
+      length += 1
+    l = [(reg >> 8)&0xFF, (reg & 0xFF), (reg_num >> 8) & 0xFF, reg_num & 0xFF]
     if(id > 0xF7):
       print("device addr error.")
       return [self.eRTU_ID_ERROR]
     l = self._packed(id, self.eCMD_READ_DISCRETE, l)
     self._send_package(l)
-    l = self.recv_and_parse_package(id, self.eCMD_READ_DISCRETE,size*2)
-    if (l[0] == 0) and (len(l) == (5+size+1)):
+    l = self.recv_and_parse_package(id, self.eCMD_READ_DISCRETE,length)
+    if ((l[0] == 0) and (len(l) == (5+length+1))):
       la = [l[0]] + l[4: len(l)-2]
       return la
     return [l[0]]
@@ -285,12 +271,13 @@ class DFRobot_RTU:
       return la
     return [l[0]]
     
-  def write_coils_registers(self, id, reg, data):
+  def write_coils_registers(self, id, reg, reg_num, data):
     '''
       @brief Write multiple coils Register.
       @param id:  modbus device ID. Range: 0x00 ~ 0xF7(0~247), 0x00 is broadcasr address, which all slaves will process broadcast packets, 
       @n          but will not answer.
       @param reg: Write the start address of the coils register.
+      @param reg_num: Number of coils Register.
       @param data: The list of storage coils Registers' value which will be write.
       @return Exception code:
       @n      0 : sucess.
@@ -303,8 +290,13 @@ class DFRobot_RTU:
       @n      10 or eRTU_MEMORY_ERROR: Memory error.
       @n      11 or eRTU_ID_ERROR: Broadcasr address or error ID
     '''
-    size = len(data) >> 1
-    l = [(reg >> 8)&0xFF, (reg & 0xFF), ((size >> 8) & 0xFF), (size & 0xFF), size*2] + data
+    length = reg_num // 8
+    mod = reg_num % 8
+    if mod:
+      length += 1
+    if len(data) < length:
+      return [self.eRTU_EXCEPTION_ILLEGAL_DATA_VALUE]
+    l = [(reg >> 8)&0xFF, (reg & 0xFF), ((reg_num >> 8) & 0xFF), (reg_num & 0xFF), length] + data
     if(id > 0xF7):
       print("device addr error.")
       return 0
@@ -366,6 +358,12 @@ class DFRobot_RTU:
     #print("crc=%x"%crc)
     return crc
 
+  def _clear_recv_buffer(self):
+    remain = self._ser.inWaiting()
+    while remain:
+      self._ser.read(remain)
+      remain = self._ser.inWaiting()
+
   def _packed(self, id, cmd, l):
     length = 4+len(l)
     #print(len(l))
@@ -385,6 +383,7 @@ class DFRobot_RTU:
     return package;
 
   def _send_package(self, l):
+    self._clear_recv_buffer()
     if len(l):
       self._ser.write(l)
 
