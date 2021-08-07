@@ -42,7 +42,7 @@ DFRobot_18B20_RS485::~DFRobot_18B20_RS485(){}
 
 int DFRobot_18B20_RS485::begin(){
   delay(2000);//wait for 1s
-  setTimeoutTimeMs(500);
+  setTimeoutTimeMs(200);
   if(_addr > 0xF7){
       DBG("Invaild Device addr.");
   }
@@ -170,12 +170,13 @@ bool DFRobot_18B20_RS485::setDeviceAddress(uint8_t newAddr){
   uint16_t ret = writeHoldingRegister(_addr, REG_DEVICE_ADDR, (uint16_t)newAddr);
   if(_addr == 0){
       delay(1000);
-      ret = readHoldingRegister(newAddr, REG_DEVICE_ADDR);
-      DBG(ret,HEX);
-      if(ret == newAddr){
-        _addr = newAddr;
-        return true;
-      }
+      //ret = readHoldingRegister(newAddr, REG_DEVICE_ADDR);
+      //DBG(ret,HEX);
+      // if(ret == newAddr){
+      // _addr = newAddr;
+       // return true;
+      //}
+      return true;
   }else{
     if(ret == 0){
         _addr = newAddr;
@@ -226,8 +227,8 @@ bool DFRobot_18B20_RS485::batchSet18B20Accuracy(uint8_t batchId, uint8_t accurac
   uint8_t size = 0;
   uint8_t ret  = 0;
   batchId &= 0xFF;
-  for(int i = 0; i <= DEVICE_CONNECTED_MAX_NUM; i++){
-    if((i != DEVICE_CONNECTED_MAX_NUM) && (batchId & (1 << i))){
+  for(int i = 0; i <= SENSOR_CONNECTED_MAX_NUM; i++){
+    if((i != SENSOR_CONNECTED_MAX_NUM) && (batchId & (1 << i))){
        if(size == 0) id = i;
        temp[size] = 0x00;
        temp[size + 1] = accuracy;
@@ -240,7 +241,7 @@ bool DFRobot_18B20_RS485::batchSet18B20Accuracy(uint8_t batchId, uint8_t accurac
             DBG(batchId,BIN);
             DBG(id);  //start id
             DBG(i - 1);   //end id
-            DBG("Set threshold Error.");
+            DBG("Set Accuracy Error.");
             return false;
           }
        }
@@ -249,7 +250,7 @@ bool DFRobot_18B20_RS485::batchSet18B20Accuracy(uint8_t batchId, uint8_t accurac
   return true;
 }
 uint8_t DFRobot_18B20_RS485::get18B20Accuracy(uint8_t id){
-  if(id >= DEVICE_CONNECTED_MAX_NUM) return 0xFF;
+  if(id >= SENSOR_CONNECTED_MAX_NUM) return 0xFF;
   uint8_t accuracy = 0xFF;
   uint16_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_ACCURACY+id);
   accuracy = (uint8_t)(ret & 0xFF);
@@ -276,8 +277,8 @@ bool DFRobot_18B20_RS485::batchSet18B20TemperatureThreshold(uint8_t batchId, int
   uint8_t size = 0;
   uint8_t ret  = 0;
   batchId &= 0xFF;
-  for(int i = 0; i <= DEVICE_CONNECTED_MAX_NUM; i++){
-    if((i != DEVICE_CONNECTED_MAX_NUM) && (batchId & (1 << i))){
+  for(int i = 0; i <= SENSOR_CONNECTED_MAX_NUM; i++){
+    if((i != SENSOR_CONNECTED_MAX_NUM) && (batchId & (1 << i))){
        if(size == 0) id = i;
        temp[size] = (uint8_t)tH;
        temp[size + 1] = (uint8_t)tL;
@@ -328,7 +329,7 @@ bool DFRobot_18B20_RS485::getTemperatureThreshold(e18B20IDNum_t id, int8_t *tH, 
 }
 
 bool DFRobot_18B20_RS485::getTemperatureThreshold(uint8_t id, int8_t *tH, int8_t *tL){
-  if(id >= DEVICE_CONNECTED_MAX_NUM) return false;
+  if(id >= SENSOR_CONNECTED_MAX_NUM) return false;
   uint8_t temp[2];
   uint8_t ret = readHoldingRegister(_addr, REG_18B20_NUM0_TH_TL+id, &temp, sizeof(temp));
   if(ret == 0){
@@ -362,7 +363,7 @@ uint8_t DFRobot_18B20_RS485::get18B20ROM(e18B20IDNum_t id,  uint8_t (&rom)[8]){
 }
 
 uint8_t DFRobot_18B20_RS485::get18B20ROM(uint8_t id, uint8_t (&rom)[8]){
-  if(id >= DEVICE_CONNECTED_MAX_NUM){
+  if(id >= SENSOR_CONNECTED_MAX_NUM){
     DBG("id param out of range(0~7)");
     DBG(id)
     return 0;
@@ -392,8 +393,8 @@ String DFRobot_18B20_RS485::getROMHexString(uint8_t rom[8]){
     }
     code = "";
     while(n){
-      int i = n % 16;
-      code = hexarr[i] + code;
+      int j = n % 16;
+      code = hexarr[j] + code;
       n /= 16;
     }
     if(code.length() < 2){
@@ -409,7 +410,7 @@ float DFRobot_18B20_RS485::getTemperatureC(e18B20IDNum_t id){
 }
   
 float DFRobot_18B20_RS485::getTemperatureC(uint8_t id){
-  if(id >= DEVICE_CONNECTED_MAX_NUM) return 0.0;
+  if(id >= SENSOR_CONNECTED_MAX_NUM) return 0.0;
   uint16_t temp = readHoldingRegister(_addr, REG_18B20_NUM0_TEMP+id);
   return temp/16.0;
 }

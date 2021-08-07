@@ -10,8 +10,8 @@
  *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
  *     GND    |              GND               |        GND           |    GND    |   GND   |  GND  |     X      |
- *     RX     |              TX                |     Serial1 RX1      |     5     |   5/D6  |  D2   |     X      |
- *     TX     |              RX                |     Serial1 TX1      |     4     |   4/D7  |  D3   |     X      |
+ *     RX     |              TX                |     Serial1 TX1      |     5     |   5/D6  |  D2   |     X      |
+ *     TX     |              RX                |     Serial1 RX1      |     4     |   4/D7  |  D3   |     X      |
  * ---------------------------------------------------------------------------------------------------------------
  *
  * @copyright   Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
@@ -27,12 +27,28 @@
 #endif
 
 /**
- * @brief DFRobot_18B20_UART构造函数
- * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
- * @n     TEL0144_DEFAULT_DEVICE_ADDRESS: TEL0144协议转换板默认地址0x20（十进制32）
- * @n     RTU_BROADCAST_ADDRESS         : modbus RTU广播地址0x00（十进制0）,设置为改地址后，将会发送广播包，所有modbus从机都会处理该数据包，但不会应答
- * @n  用户可以通过该地址批量配置TEL0144协议转换板
- * @param s   : 指向Stream流的串口指针
+ * @brief DFRobot_18B20_UART构造函数。
+ * @param addr: TEL0144设备的设备地址(1~247)或广播地址(0)。主机要和TEL0144从机设备通信，需要知道从机设备的串口通信配置和设备地址，主机使用广播地址将发送广播包，
+ * @n     总线上所有从机设备都会处理该广播包，但不会响应。地址介绍：
+ * @n     RTU_BROADCAST_ADDRESS or 0(0x00)            : 广播地址，使用改地址将初始化一个地址为广播地址的类对象，该类对象只能用来设置总线上所有TEL0144的参数，
+ * @n                                                  比如设备地址、串口通信波特率、18B20传感器精度和温度的上下阈值等，无法用来获取总线上相关设备的具体配置。
+ * @n     TEL0144_DEFAULT_DEVICE_ADDRESS or 32（0x20）: TEL0144设备出厂默认设备地址，如果用户没有修改设备的地址，那么TEL0144的设备地址为32。
+ * @n     1~247 or 0x01~0xF7                          : TEL0144设备支持的设备地址范围，可以被设置成1~147范围内的任意设备地址。
+ * @param s   : 指向Stream流的串口指针，此种传递方式需要在demo中调用begin初始化Arduino主控的通信串口配置，需和TEL0144设备从机的串口配置一致，如果不修改，
+ * @n TEL0144设备的出厂默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位，用户只能修改串口的波特率，其他参数无法修改。
+ * @n 注意：主机和TEL0144成功通信的前提是知道TEL0144设备的串口配置和设备地址，其中串口配置是十分重要的，不能遗忘的，请谨慎修改，如果知道串口配置，但忘记了设备地址，
+ * @n 可以通过以下2种方式，重新得到设备地址，从而实现主机和TEL0144之间的通信：
+ * @n 1: 主机上连接一个TEL0144设备，修改scanModbusID.ino里的串口配置后，下载烧录，通过地址扫描程序扫描改设备的地址。
+ * @n 2: 直接初始化一个广播地址类对象，将地址修改位1~247范围内的任意地址。
+ * @n TEL0144支持以下几种波特率配置，用户可以调用setBaudrate函数将其配置为以下波特率：
+ * @n     eBAUDRATE_2400    or 2400  :  TEL0144设备串口波特率2400
+ * @n     eBAUDRATE_4800    or 4800  :  TEL0144设备串口波特率4800 
+ * @n     eBAUDRATE_9600    or 9600  :  TEL0144设备串口波特率9600 (出厂默认波特率配置)
+ * @n     eBAUDRATE_14400   or 14400 :  TEL0144设备串口波特率14400 
+ * @n     eBAUDRATE_19200   or 19200 :  TEL0144设备串口波特率19200 
+ * @n     eBAUDRATE_38400   or 38400 :  TEL0144设备串口波特率38400 
+ * @n     eBAUDRATE_57600   or 57600 :  TEL0144设备串口波特率57600 
+ * @n     eBAUDRATE_115200  or 115200:  TEL0144设备串口波特率115200 
  */
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
   SoftwareSerial mySerial(/*rx =*/4, /*tx =*/5);
@@ -149,7 +165,7 @@ void loop() {
   Serial.print("18B20 connected numbers(range 0~8): ");
   Serial.println(connectedNum);
   
-  for(int id = 0; id < DEVICE_CONNECTED_MAX_NUM; id++){
+  for(int id = 0; id < SENSOR_CONNECTED_MAX_NUM; id++){
       /**
        * @brief 获取序号为id的温度传感器的ROM码。
        * @param id: 范围0~7或e18B20IDNum_t枚举变量，依次对应0~7号DS18B20传感器

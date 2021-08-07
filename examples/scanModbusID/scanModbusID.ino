@@ -7,11 +7,11 @@
  * @n 验位，停止位等串口配置。
  * @n connected table
  * ---------------------------------------------------------------------------------------------------------------
- * sensor pin |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
+ *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
  *     GND    |              GND               |        GND           |    GND    |   GND   |  GND  |     X      |
- *     RX     |              TX                |     Serial1 RX1      |     5     |5/D6(TX) |  D2   |     X      |
- *     TX     |              RX                |     Serial1 TX1      |     4     |4/D7(RX) |  D3   |     X      |
+ *     RX     |              TX                |     Serial1 TX1      |     5     |   5/D6  |  D2   |     X      |
+ *     TX     |              RX                |     Serial1 RX1      |     4     |   4/D7  |  D3   |     X      |
  * ---------------------------------------------------------------------------------------------------------------
  * @note: 不支持UNO，Microbit，ESP8266
  *

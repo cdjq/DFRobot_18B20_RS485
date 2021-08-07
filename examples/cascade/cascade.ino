@@ -5,19 +5,20 @@
  * @n 将2块板子设置为不同的设备地址(1~247范围内)，设置设备的串口通信参数和设备地址可以参考config.ino demo.
  *  
  * @n  实验演示：将板1的设备地址设置为16（十六进制0x10），板2设置为32（十六进制0x20），循环采集2块板子上18B20的连接数量，ROM号，温度上下阈值，精度及温度。
- * @n  在这里你可以创建一个广播对象，批量修改总线上所有设备的配置。
+ * @n  在这里你可以创建一个广播对象，批量修改总线上所有设备的配置（此方法需谨慎使用，最好不要用来批量修改设备地址，会导致总线上所有设备地址一致）。
  * 
  * @n connected table
  * ---------------------------------------------------------------------------------------------------------------
  *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
  *     GND    |              GND               |        GND           |    GND    |   GND   |  GND  |     X      |
- *     RX     |              TX                |     Serial1 RX1      |     5     |   5/D6  |  D2   |     X      |
- *     TX     |              RX                |     Serial1 TX1      |     4     |   4/D7  |  D3   |     X      |
+ *     RX     |              TX                |     Serial1 TX1      |     5     |   5/D6  |  D2   |     X      |
+ *     TX     |              RX                |     Serial1 RX1      |     4     |   4/D7  |  D3   |     X      |
  * ---------------------------------------------------------------------------------------------------------------
  * 
- * @n TEL0144串口级联方式：将第一块板子按照上述连接标连接，即板子的RX连接到MCU的TX，板子的TX连接到MCU的RX，然后依次将后一块板子的串口连接到上一块板子
- * @n 的串行接口，级联方式支持：主控和板子之间串口交叉连接（即TX连RX，RX连TX），板子和板子之间同名连接（即TX连TX，RX连RX）。
+ * @n TEL0144 RS485接口级联方式：总线上所有TEL0144板子A连A，B连B。如果主控有RS485接口，则直接把其中一块板子的A/B接口连接到主控的A，B接口上 ；
+ * @n 如果主控上没有RS485接口，则需要一块TTL转RS485转换板，将转换板的RS485接口连接到级联的其中一块TEL0144板子的RS485接口上，再将主控的串口和
+ * @n 转换板的TTL接口相连接。
  *
  * @copyright   Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @licence     The MIT License (MIT)
@@ -34,12 +35,28 @@
 #define CASCADE_DEVICE_NUM     2   //协议转换板的级联数量，这里表示总线上有2个设备级联
 
 /**
- * @brief DFRobot_18B20_UART构造函数
- * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
- * @n     TEL0144_DEFAULT_DEVICE_ADDRESS: TEL0144协议转换板默认地址0x20（十进制32）
- * @n     RTU_BROADCAST_ADDRESS         : modbus RTU广播地址0x00（十进制0）,设置为改地址后，将会发送广播包，所有modbus从机都会处理该数据包，但不会应答
- * @n  用户可以通过该地址批量配置TEL0144协议转换板
- * @param s   : 指向Stream流的串口指针
+ * @brief DFRobot_18B20_UART构造函数。
+ * @param addr: TEL0144设备的设备地址(1~247)或广播地址(0)。主机要和TEL0144从机设备通信，需要知道从机设备的串口通信配置和设备地址，主机使用广播地址将发送广播包，
+ * @n     总线上所有从机设备都会处理该广播包，但不会响应。地址介绍：
+ * @n     RTU_BROADCAST_ADDRESS or 0(0x00)            : 广播地址，使用改地址将初始化一个地址为广播地址的类对象，该类对象只能用来设置总线上所有TEL0144的参数，
+ * @n                                                  比如设备地址、串口通信波特率、18B20传感器精度和温度的上下阈值等，无法用来获取总线上相关设备的具体配置。
+ * @n     TEL0144_DEFAULT_DEVICE_ADDRESS or 32（0x20）: TEL0144设备出厂默认设备地址，如果用户没有修改设备的地址，那么TEL0144的设备地址为32。
+ * @n     1~247 or 0x01~0xF7                          : TEL0144设备支持的设备地址范围，可以被设置成1~147范围内的任意设备地址。
+ * @param s   : 指向Stream流的串口指针，此种传递方式需要在demo中调用begin初始化Arduino主控的通信串口配置，需和TEL0144设备从机的串口配置一致，如果不修改，
+ * @n TEL0144设备的出厂默认串口配置为：9600波特率，8位数据位，无校验位，1位停止位，用户只能修改串口的波特率，其他参数无法修改。
+ * @n 注意：主机和TEL0144成功通信的前提是知道TEL0144设备的串口配置和设备地址，其中串口配置是十分重要的，不能遗忘的，请谨慎修改，如果知道串口配置，但忘记了设备地址，
+ * @n 可以通过以下2种方式，重新得到设备地址，从而实现主机和TEL0144之间的通信：
+ * @n 1: 主机上连接一个TEL0144设备，修改scanModbusID.ino里的串口配置后，下载烧录，通过地址扫描程序扫描改设备的地址。
+ * @n 2: 直接初始化一个广播地址类对象，将地址修改位1~247范围内的任意地址。
+ * @n TEL0144支持以下几种波特率配置，用户可以调用setBaudrate函数将其配置为以下波特率：
+ * @n     eBAUDRATE_2400    or 2400  :  TEL0144设备串口波特率2400
+ * @n     eBAUDRATE_4800    or 4800  :  TEL0144设备串口波特率4800 
+ * @n     eBAUDRATE_9600    or 9600  :  TEL0144设备串口波特率9600 (出厂默认波特率配置)
+ * @n     eBAUDRATE_14400   or 14400 :  TEL0144设备串口波特率14400 
+ * @n     eBAUDRATE_19200   or 19200 :  TEL0144设备串口波特率19200 
+ * @n     eBAUDRATE_38400   or 38400 :  TEL0144设备串口波特率38400 
+ * @n     eBAUDRATE_57600   or 57600 :  TEL0144设备串口波特率57600 
+ * @n     eBAUDRATE_115200  or 115200:  TEL0144设备串口波特率115200 
  */
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
   SoftwareSerial mySerial(/*rx =*/4, /*tx =*/5);
@@ -58,14 +75,6 @@ void setup() {
   }
 
   //初始化类对象数组
-/**
- * @brief DFRobot_18B20_UART构造函数
- * @param addr: modbus从机地址（范围1~247）或广播地址（0x00），若配置为广播地址，发送广播包，总线上所有的从机都会处理该广播包，但不会应答
- * @n     TEL0144_DEFAULT_DEVICE_ADDRESS: TEL0144协议转换板默认地址0x20（十进制32）
- * @n     RTU_BROADCAST_ADDRESS         : modbus RTU广播地址0x00（十进制0）,设置为改地址后，将会发送广播包，所有modbus从机都会处理该数据包，但不会应答
- * @n  用户可以通过该地址批量配置TEL0144协议转换板
- * @param s   : 指向Stream流的串口指针
- */
   for(uint8_t num = 0; num < CASCADE_DEVICE_NUM; num++){
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
     board[num] = DFRobot_18B20_UART(/*addr =*/modbusDeviceAddr[num], /*s =*/&mySerial); //初始化级联设备
@@ -97,9 +106,9 @@ void setup() {
     }
   }
   
-  if(cascadeNum != CASCADE_DEVICE_NUM){ //如果初始化成功的设备数不等于级联数，则退出该程序
+  if(cascadeNum != CASCADE_DEVICE_NUM){ //如果初始化成功的设备数不等于级联数，则循环等待
     Serial.println("Initialization Modbus device Lists failed.");
-    return;//退出
+    while(1);
   }
 
   broadcast.begin();
@@ -178,12 +187,12 @@ void loop() {
     Serial.print("--------------borad [");
     Serial.print(num);
     Serial.println("] info--------------");
-    Serial.print("Device Address(range 001~247): ");
+    Serial.print("Device Address(range 001~247 or 0): ");
     Serial.print(printFormatNum(deviceAddr));
     Serial.print("\t18B20 connected numbers(range 0~8):");
     Serial.println(connectedNum);
 
-    for(uint8_t id = 0; id < DEVICE_CONNECTED_MAX_NUM; id++){
+    for(uint8_t id = 0; id < SENSOR_CONNECTED_MAX_NUM; id++){
        board[num].get18B20ROM(/*id =*/id, /*(&rom)[8]*/rom);
        board[num].getTemperatureThreshold(/*id =*/id, /*tH =*/&tempThresholdH, /*tL =*/&tempThresholdL);
        accuarcy = board[num].get18B20Accuracy(id);
@@ -194,7 +203,7 @@ void loop() {
        Serial.print("\tROM: ");
        Serial.print(board[num].getROMHexString(/*rom[8] =*/rom));
        Serial.print("\tconnected(0-disconnected, 1-connected):");
-       Serial.print((connectedNum >> id)&0x01);
+       Serial.print((connectedState >> id)&0x01);
        Serial.print("\tThreshold High(-55~125): ");
        Serial.print(tempThresholdH);
        Serial.print("\tThreshold Low(-55~125): ");
