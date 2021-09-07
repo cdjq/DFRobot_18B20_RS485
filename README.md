@@ -61,7 +61,8 @@ ID范围0-7，TEL0144设备能同时连接8个18B20传感器，每连接一个�
 每个18B20都有一个专属的64位的标识号，通过这个可以区分不同的18B20传感器，通过查询ROM码为18B20绑定唯一的ID号，ROM码一旦绑定除非用另一个传感器清楚，否则永远保存。  
 
 ## Connected
-Hardware conneted table<br>
+Hardware conneted table 
+
  Sensor      |               MCU                 |
 ------------ | :-------------------------------: |
 VCC          |                5V                 |
