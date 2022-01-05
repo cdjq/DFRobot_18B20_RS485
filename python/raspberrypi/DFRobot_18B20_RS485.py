@@ -344,7 +344,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return self._addr
 
   def batch_set_18b20_accuracy(self, batch_io, batch_id, accuracy):
-    '''
+    '''!
       @brief 批量设置18B20温度传感器的精度，如果不修改，默认精度为e18B20_ACCURACY_12_BIT，掉电保存，配置不丢失。
       @param batch_io 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
       @n ---------------------------------------------------------------------------------------------------------
@@ -420,7 +420,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return True
 
   def set_18B20_accuracy(self, io, id, accuracy):
-    '''
+    '''!
       @brief 获取单个18B20传感器的精度配置。
       @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -454,7 +454,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return True
   
   def get_18B20_accuracy(self, io, id):
-    '''
+    '''!
       @brief 获取单个18B20传感器的精度配置。
       @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -484,7 +484,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return accuracy
 
   def batch_set_18b20_temperature_threshold(self, batch_io, batch_id, th, tl):
-    '''
+    '''!
       @brief 批量设置18B20传感器的温度阈值。
       @param batch_io 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
       @n ---------------------------------------------------------------------------------------------------------
@@ -561,7 +561,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return True
 
   def set_temperature_threshold(self, io, id, th, tl):
-    '''
+    '''!
       @brief 设置指定18B20的温度阈值
       @param io  指定TEL0144协议转换板的IO口，即要设置的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -602,7 +602,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return True
 
   def get_temperature_threshold(self, io, id):
-    '''
+    '''!
       @brief 获取单个18B20传感器的温度阈值,范围-55~125℃。
       @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -635,7 +635,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return [th, tl]
   
   def get_temperature_threshold_alarm_flag(self):
-    '''
+    '''!
       @brief 获取TEL0144协议转换板上各IO口连接的18B20传感器温度阈值报警状态。
       @return 单个TEL0144协议板上所有传感器是否发生温度阈值报警的状态:
       @n -----------------------------------------------------------------
@@ -672,7 +672,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return state
 
   def parse_threshold_alarm_flag(self, io, id, alarm_flag):
-    '''
+    '''!
       @brief 解析指定IO引脚指定序号对应的18B20温度传感器的温度相对于温度阈值范围的状态
       @param io  指定TEL0144协议转换板的IO口，即要解析的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -705,7 +705,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return self.IN_THE_TEMPERATURE_THRESHOLD
 
   def get_18B20_number(self, batch_io = eBatch_ALL):
-    '''
+    '''!
       @brief 获取选中的IO口上实际连接的18B20的数量。
       @param batch_io 选择要获取那些IO引脚上连接的传感器的数量和，各项之间用|表示，比如要获取D1和D2口上连接的18B20传感器的数量，则参数为(eBatch_D1|eBatch_D2)
       @n ---------------------------------------------------------------------------------------------------------
@@ -744,7 +744,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return num
 
   def get_temperature_c(self, io, id):
-    '''
+    '''!
       @brief 获取指定18B20传感器的温度，单位：摄氏度(℃)。
       @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -768,7 +768,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return val/16.0
   
   def get_18B20_rom(self, io, id):
-    '''
+    '''!
       @brief 获取指定18B20传感器的ROM码
       @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
       @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
@@ -794,7 +794,7 @@ class DFRobot_18B20_RS485(DFRobot_RTU):
     return [0]*8
   
   def get_rom_hex_string(self,rom):
-    '''
+    '''!
       @brief 将获取到的8字节的ROM码转换为16进制表示的字符串，例：8字节的ROM号为0x28 0xAA 0xAD 0x38 0x54 0x14 0x01 0x6A转化为
       @n 字符串为28AAAD385414016A。
       @param rom: 长度为8的ROM列表。
