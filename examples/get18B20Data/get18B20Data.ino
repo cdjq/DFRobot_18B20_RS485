@@ -91,153 +91,144 @@ void setup() {
   Serial.print("BAUDRATE: ");
   Serial.println(board.getBaudrate());
   
-/**
- * @brief 批量设置18B20温度传感器的精度。
- * @param batchId: 18B20传感器ID集合
- * @n ---------------------------------------------------------------------------------------------------------
- * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
- * @n | eBatch_ID7 | eBatch_ID6 | eBatch_ID5 | eBatch_ID4 | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
- * @n |   1 << 7   |   1 << 6   |   1 << 5   |   1 << 4   |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
- * @n |                                         eBatch_ID_ALL                                                 |
- * @n ---------------------------------------------------------------------------------------------------------
- * @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
- * @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
- * @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
- * @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
- * @n     eBatch_ID4     or 1 << 4 : 批量配置中，协议板上id为4的18B20传感器需要配置
- * @n     eBatch_ID5     or 1 << 5 : 批量配置中，协议板上id为5的18B20传感器需要配置
- * @n     eBatch_ID6     or 1 << 6 : 批量配置中，协议板上id为6的18B20传感器需要配置
- * @n     eBatch_ID7     or 1 << 7 : 批量配置中，协议板上id为7的18B20传感器需要配置
- * @n     eBatch_ID_ALL  or  0xFF  : 批量配置中，协议板上所有的18B20传感器需要配置
- * @param accuracy：精度设置
- * @n      e18B20_ACCURACY_9_BIT  or 0:  9位精度
- * @n      e18B20_ACCURACY_10_BIT or 1:  10位精度
- * @n      e18B20_ACCURACY_11_BIT or 2:  11位精度
- * @n      e18B20_ACCURACY_12_BIT or 3:  12位精度
- * @return 设置状态:
- * @n      true:  设置成功
- * @n      false: 设置失败
- */
-  board.batchSet18B20Accuracy(/*batchId =*/board.eBatch_ID_ALL, /*accuracy =*/board.e18B20_ACCURACY_12_BIT);
-/**
- * @brief 批量设置18B20温度传感器的温度阈值。
- * @param batchId: 18B20传感器ID集合
- * @n ---------------------------------------------------------------------------------------------------------
- * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
- * @n | eBatch_ID7 | eBatch_ID6 | eBatch_ID5 | eBatch_ID4 | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
- * @n |   1 << 7   |   1 << 6   |   1 << 5   |   1 << 4   |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
- * @n |                                         eBatch_ID_ALL                                                 |
- * @n ---------------------------------------------------------------------------------------------------------
- * @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
- * @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
- * @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
- * @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
- * @n     eBatch_ID4     or 1 << 4 : 批量配置中，协议板上id为4的18B20传感器需要配置
- * @n     eBatch_ID5     or 1 << 5 : 批量配置中，协议板上id为5的18B20传感器需要配置
- * @n     eBatch_ID6     or 1 << 6 : 批量配置中，协议板上id为6的18B20传感器需要配置
- * @n     eBatch_ID7     or 1 << 7 : 批量配置中，协议板上id为7的18B20传感器需要配置
- * @n     eBatch_ID_ALL  or  0xFF  : 批量配置中，协议板上所有的18B20传感器需要配置
- * @param tH: 设置温度的上阈值，范围-55~125℃
- * @param tL: 设置温度的下阈值，范围-55~125℃
- * @n note: 必须满足设置条件tH > tL
- * @return 设置状态:
- * @n      true:  设置成功
- * @n      false: 设置失败
- */
-  board.batchSet18B20TemperatureThreshold(/*batchId =*/board.eBatch_ID_ALL, /*tH =*/125, /*tL =*/-55);
+  /**
+   * @brief 批量设置18B20温度传感器的精度，如果不修改，默认精度为e18B20_ACCURACY_12_BIT，掉电保存，配置不丢失。
+   * @param batchIo 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+   * @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_D4  | eBatch_D3  | eBatch_D2  | eBatch_D1  |
+   * @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+   * @n |                                                   |                      eBatch_ALL                   |
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n     eBatch_D1     or 1 << 0 : 批量配置中， D1 IO引脚被选择
+   * @n     eBatch_D2     or 1 << 1 : 批量配置中， D2 IO引脚被选择
+   * @n     eBatch_D3     or 1 << 2 : 批量配置中， D3 IO引脚被选择
+   * @n     eBatch_D4     or 1 << 3 : 批量配置中， D4 IO引脚被选择
+   * @n     eBatch_ALL    or  0x0F  : 批量配置中， D1~D4 所有IO引脚被选择
+   * @param batchId: 选择要配置IO引脚上连接的那些18B20传感器进度
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+   * @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
+   * @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+   * @n |                                                   |                      eBatch_ID_ALL                |
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
+   * @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
+   * @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
+   * @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
+   * @n     eBatch_ID_ALL  or  0x0F  : 批量配置中，协议板上所有的18B20传感器需要配置
+   * @param accuracy：精度设置
+   * @n      e18B20_ACCURACY_9_BIT  or 0:  9位精度
+   * @n      e18B20_ACCURACY_10_BIT or 1:  10位精度
+   * @n      e18B20_ACCURACY_11_BIT or 2:  11位精度
+   * @n      e18B20_ACCURACY_12_BIT or 3:  12位精度
+   * @return 设置状态:
+   * @n      true:  设置成功
+   * @n      false: 设置失败
+   * @attention 精度配置掉电保存，不丢失
+   */
+  board.batchSet18B20Accuracy(/*batchIo =*/board.eBatch_ALL, /*batchId =*/board.eBatch_ID_ALL, /*accuracy =*/board.e18B20_ACCURACY_12_BIT);//批量设置，将TEL0144设备上所有IO口连接的18B20传感器的精度设置为12位
+  /**
+   * @brief 批量设置18B20温度传感器的温度阈值。
+   * @param batchIo 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+   * @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_D4  | eBatch_D3  | eBatch_D2  | eBatch_D1  |
+   * @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+   * @n |                                                   |                      eBatch_ALL                   |
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n     eBatch_D1     or 1 << 0 : 批量配置中， D1 IO引脚被选择
+   * @n     eBatch_D2     or 1 << 1 : 批量配置中， D2 IO引脚被选择
+   * @n     eBatch_D3     or 1 << 2 : 批量配置中， D3 IO引脚被选择
+   * @n     eBatch_D4     or 1 << 3 : 批量配置中， D4 IO引脚被选择
+   * @n     eBatch_ALL    or  0x0F  : 批量配置中， D1~D4 所有IO引脚被选择
+   * @param batchId: 18B20传感器ID集合
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+   * @n | eBatch_ID7 | eBatch_ID6 | eBatch_ID5 | eBatch_ID4 | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
+   * @n |   1 << 7   |   1 << 6   |   1 << 5   |   1 << 4   |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+   * @n |                                         eBatch_ID_ALL                                                 |
+   * @n ---------------------------------------------------------------------------------------------------------
+   * @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
+   * @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
+   * @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
+   * @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
+   * @n     eBatch_ID4     or 1 << 4 : 批量配置中，协议板上id为4的18B20传感器需要配置
+   * @n     eBatch_ID5     or 1 << 5 : 批量配置中，协议板上id为5的18B20传感器需要配置
+   * @n     eBatch_ID6     or 1 << 6 : 批量配置中，协议板上id为6的18B20传感器需要配置
+   * @n     eBatch_ID7     or 1 << 7 : 批量配置中，协议板上id为7的18B20传感器需要配置
+   * @n     eBatch_ID_ALL  or  0xFF  : 批量配置中，协议板上所有的18B20传感器需要配置
+   * @param tH: 设置温度的上阈值，范围-55~125℃
+   * @param tL: 设置温度的下阈值，范围-55~125℃
+   * @n note: 必须满足设置条件tH > tL
+   * @return 设置状态:
+   * @n      true:  设置成功
+   * @n      false: 设置失败
+   */
+  board.batchSet18B20TemperatureThreshold(/*batchIo =*/board.eBatch_ALL, /*batchId =*/board.eBatch_ID_ALL, /*tH =*/125, /*tL =*/-55);//批量设置，将TEL0144设备上所有IO口连接的18B20传感器的阈值设置为-55~125
 }
 
 void loop() {
-/**
- * @brief 获取协议转换板上实际连接的18B20的数量。
- * @return 18B20设备数量，范围0~8：
- * @n      0：协议转换板上未连接18B20传感器
- * @n      1: 协议转换板上连接了1个18B20传感器
- * @n      ......
- * @n      8:  协议转换板上连接了8个18B20传感器
- */
-  uint8_t connectedNum =  board.get18B20Number();
-  uint8_t rom[DS18B20_ROM_BYTES] = {}; //DS18B20_ROM_BYTES = 8字节
-  int8_t tempThresholdH;
-  int8_t tempThresholdL;
-  uint8_t accuarcy;
-  float temp;
-  Serial.print("18B20 connected numbers(range 0~8): ");
-  Serial.println(connectedNum);
+  uint8_t totalConnected; //记录TEL0144设备上所有IO口连接的18B20传感器数量之和
+  uint8_t ioConnected;    //记录TEL0144设备上单独IO口连接的18B20传感器数量
+  uint16_t connetedState; //记录TEL0144设备各IO口的每个位置是否连接18B20传感器的情况，TEL0144有4个IO口，每个IO口最多可连接4个传感器，用16位数据分别代表各IO口上传感器的连接情况，0->未连接，1->连接
+  uint8_t rom[DS18B20_ROM_BYTES]; //存储单个18B20的ROM数据， DS18B20_ROM_BYTES = 8字节
+  int8_t tempThresholdH, tempThresholdL; //记录18B20的温度阈值
+  uint8_t accuracy;      //记录18B20的精度配置
+  float temp;            //记录18B20传感器采集到的温度数据
+  uint32_t alarmFlag;    //记录TEL0144设备所有18B20的温度报警状态标志
+
+  connetedState  = board.scan();
+  totalConnected = board.get18B20Number(board.eBatch_ALL);
+  alarmFlag      = board.getTemperatureThresholdAlarmFlag();
+  Serial.print("18B20 connected numbers(range 0~16): ");
+  Serial.println(totalConnected);
+  Serial.println("|-----------------------------------------------------------------------------------------------|");
+  Serial.println("|              18B20 connecte table of TEL0144(0->not connected, 1->connected)                  |");
+  Serial.println("|-----------------------------------------------------------------------------------------------|");
+  Serial.println("|           D4          |           D3          |           D2          |           D1          |");
+  Serial.println("| b15 | b14 | b13 | b12 | b11 | b10 | b09 | b08 | b07 | b06 | b05 | b04 | b03 | b02 | b01 | b00 |");
+  Serial.println("| id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 |");
+  for(int i = DS18B20_CONNECT_IO_NUM*DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM; i > 0; i--){
+    if(connetedState & (1 << (i - 1))){
+      Serial.print("|  1  ");
+    }else{
+      Serial.print("|  0  ");
+    }
+  }
+  Serial.println("|\n|-----------------------------------------------------------------------------------------------|");
   
-  for(int id = 0; id < SENSOR_CONNECTED_MAX_NUM; id++){
-      /**
-       * @brief 获取序号为id的温度传感器的ROM码。
-       * @param id: 范围0~7或e18B20IDNum_t枚举变量，依次对应0~7号DS18B20传感器
-       * @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-       * @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-       * @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-       * @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-       * @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-       * @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-       * @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-       * @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-       * @param rom: 存放18B20 ROM数据的数组指针，只接受固定长度为8的数组指针参数。18B20的 ROM数据为8字节。
-       * @return 实际读取的字节数:
-       * @n      DS18B20_ROM_BYTES 或 8:  获取成功
-       * @n      0: 获取失败
-       */
-      board.get18B20ROM(/*id =*/id, /*(&rom)[8]*/rom);
-      /**
-       * @brief 获取序号为id的温度传感器的上下温度阈值。
-       * @param id: 范围0~7或e18B20IDNum_t枚举变量，依次对应0~7号DS18B20传感器
-       * @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-       * @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-       * @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-       * @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-       * @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-       * @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-       * @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-       * @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-       * @param tH: 存储温度的上阈值，范围-55~125℃
-       * @param tL: 存储温度的下阈值，范围-55~125℃
-       * @return 获取状态:
-       * @n      true:  获取成功
-       * @n      false: 获取失败
-       */
-      board.getTemperatureThreshold(/*id =*/id, /*tH =*/&tempThresholdH, /*tL =*/&tempThresholdL);
-      accuarcy = board.get18B20Accuracy(id);
-      /**
-       * @brief 获取序号为id的18B20的温度数据，单位：摄氏度(℃)。
-       * @param id: 范围0~7或e18B20IDNum_t枚举变量，依次对应0~7号DS18B20传感器
-       * @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-       * @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-       * @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-       * @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-       * @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-       * @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-       * @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-       * @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-       * @return 温度:单位摄氏度，可以测量-55~125摄氏度范围内的温度
-       */
-      temp = board.getTemperatureC(/*id =*/id);
-      
-      Serial.print("id(0~7): ");
+  for(uint8_t io = 1; io <= DS18B20_CONNECT_IO_NUM; io++){
+    Serial.print("IO: D");
+    Serial.print(io);
+    ioConnected = board.get18B20Number(1 << (io - 1));
+    Serial.print("\tconnected(range 0~4): ");
+    Serial.println(ioConnected);
+
+    for(uint8_t id = 0; id < DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM; id++){
+      board.get18B20ROM(/*io =*/io, /*id =*/id, /*(&rom)[8]*/rom);
+      board.getTemperatureThreshold(/*io =*/io, /*id =*/id, /*tH =*/&tempThresholdH, /*tL =*/&tempThresholdL);
+      accuracy = board.get18B20Accuracy(/*io =*/io, /*id =*/id);
+      temp = board.getTemperatureC(/*io =*/io, /*id =*/id);
+      Serial.print("\tID: id");
       Serial.print(id);
       Serial.print("\tROM: ");
-      /**
-       * @brief 将获取到的8字节的ROM码转换为16进制表示的字符串，例：8字节的ROM号为0x28 0xAA 0xAD 0x38 0x54 0x14 0x01 0x6A转化为
-       * @n 字符串为28AAAD385414016A。
-       * @param rom[8]: 8字节ROM码，只接受8位字节数组参数。
-       * @return ROM码的16进制字符串:
-       */
       Serial.print(board.getROMHexString(/*rom[8] =*/rom));
+      Serial.print("\tAccuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): ");
+      Serial.print(accuracy);
+      Serial.print("\tALARM(0-IN, 1-BELOW, 2-ABOVE): ");
+      Serial.print(board.parseThresholdAlarmFlag(/*io =*/io, /*id =*/id, /*alarmFlag =*/alarmFlag));
       Serial.print("\tThreshold High(-55~125): ");
       Serial.print(tempThresholdH);
       Serial.print("\tThreshold Low(-55~125): ");
       Serial.print(tempThresholdL);
-      Serial.print("\taccuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): ");
-      Serial.print(accuarcy);
       Serial.print("\tTemperature: ");
       Serial.println(temp);
       delay(1000);
+
+    }
   }
   Serial.println();
+  delay(1000);
 }
-
 

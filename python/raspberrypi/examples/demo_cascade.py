@@ -95,51 +95,68 @@ if __name__ == "__main__":
   broadcast.begin()
   '''
     @brief 批量设置18B20温度传感器的精度，如果不修改，默认精度为e18B20_ACCURACY_12_BIT，掉电保存，配置不丢失。
-    @param batchId: 18B20传感器ID集合
+    @param batch_io 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
     @n ---------------------------------------------------------------------------------------------------------
     @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
-    @n | eBatch_ID7 | eBatch_ID6 | eBatch_ID5 | eBatch_ID4 | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
-    @n |   1 << 7   |   1 << 6   |   1 << 5   |   1 << 4   |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
-    @n |                                         eBatch_ID_ALL                                                 |
+    @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_D4  | eBatch_D3  | eBatch_D2  | eBatch_D1  |
+    @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+    @n |                                                   |                      eBatch_ALL                   |
+    @n ---------------------------------------------------------------------------------------------------------
+    @n     eBatch_D1     or 1 << 0 : 批量配置中， D1 IO引脚被选择
+    @n     eBatch_D2     or 1 << 1 : 批量配置中， D2 IO引脚被选择
+    @n     eBatch_D3     or 1 << 2 : 批量配置中， D3 IO引脚被选择
+    @n     eBatch_D4     or 1 << 3 : 批量配置中， D4 IO引脚被选择
+    @n     eBatch_ALL    or  0x0F  : 批量配置中， D1~D4 所有IO引脚被选择
+    @param batch_id: 选择要配置IO引脚上连接的那些18B20传感器进度
+    @n ---------------------------------------------------------------------------------------------------------
+    @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+    @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
+    @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+    @n |                                                   |                      eBatch_ID_ALL                |
     @n ---------------------------------------------------------------------------------------------------------
     @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
     @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
     @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
     @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
-    @n     eBatch_ID4     or 1 << 4 : 批量配置中，协议板上id为4的18B20传感器需要配置
-    @n     eBatch_ID5     or 1 << 5 : 批量配置中，协议板上id为5的18B20传感器需要配置
-    @n     eBatch_ID6     or 1 << 6 : 批量配置中，协议板上id为6的18B20传感器需要配置
-    @n     eBatch_ID7     or 1 << 7 : 批量配置中，协议板上id为7的18B20传感器需要配置
-    @n     eBatch_ID_ALL  or  0xFF  : 批量配置中，协议板上所有的18B20传感器需要配置
-    @param accuracy：精度设置
+    @n     eBatch_ID_ALL  or  0x0F  : 批量配置中，协议板上所有的18B20传感器需要配置
+    @param accuracy：精度设置,范围0~3
     @n      e18B20_ACCURACY_9_BIT  or 0:  9位精度
     @n      e18B20_ACCURACY_10_BIT or 1:  10位精度
     @n      e18B20_ACCURACY_11_BIT or 2:  11位精度
     @n      e18B20_ACCURACY_12_BIT or 3:  12位精度
-    @return 设置状态
+    @return 设置状态:
     @n      True:  设置成功
-    @n      False: 设置失败
+    @n      False: 设置失败      
   '''
-  broadcast.batch_set_18b20_accuracy(batch_id = broadcast.eBatch_ID_ALL, accuracy = broadcast.e18B20_ACCURACY_11_BIT) #将总线上所有设备上连接的和没连接的18B20传感器的进度设置为11位，（0-9bits，1-10bits，2-11bits，3-12bits）
+  #将modbus总线上所有TEL0144设备上所有18B20传感器的精度都配置为10位采集精度
+  broadcast.batch_set_18b20_accuracy(batch_io = board[0].eBatch_ALL, batch_id = broadcast.eBatch_ID_ALL, accuracy = broadcast.e18B20_ACCURACY_11_BIT) #将总线上所有设备上连接的和没连接的18B20传感器的进度设置为11位，（0-9bits，1-10bits，2-11bits，3-12bits）
 
   '''
-    @brief 批量设置18B20温度传感器的温度阈值，如果不修改，默认配置为高阈值125℃，低阈值-55℃，掉电保存，配置不丢失。
-    @param batchId: 18B20传感器ID集合
+    @brief 批量设置18B20传感器的温度阈值。
+    @param batch_io 选择要配置那些IO引脚上连接的传感器，各项之间用|表示，比如要配置D1和D2口上的传感器，则参数为(eBatch_D1|eBatch_D2)
     @n ---------------------------------------------------------------------------------------------------------
     @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
-    @n | eBatch_ID7 | eBatch_ID6 | eBatch_ID5 | eBatch_ID4 | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
-    @n |   1 << 7   |   1 << 6   |   1 << 5   |   1 << 4   |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
-    @n |                                         eBatch_ID_ALL                                                 |
+    @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_D4  | eBatch_D3  | eBatch_D2  | eBatch_D1  |
+    @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+    @n |                                                   |                      eBatch_ALL                   |
+    @n ---------------------------------------------------------------------------------------------------------
+    @n     eBatch_D1     or 1 << 0 : 批量配置中， D1 IO引脚被选择
+    @n     eBatch_D2     or 1 << 1 : 批量配置中， D2 IO引脚被选择
+    @n     eBatch_D3     or 1 << 2 : 批量配置中， D3 IO引脚被选择
+    @n     eBatch_D4     or 1 << 3 : 批量配置中， D4 IO引脚被选择
+    @n     eBatch_ALL    or  0x0F  : 批量配置中， D1~D4 所有IO引脚被选择
+    @param batch_id: 选择要配置IO引脚上连接的那些18B20传感器进度
+    @n ---------------------------------------------------------------------------------------------------------
+    @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+    @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_ID3 | eBatch_ID2 | eBatch_ID1 | eBatch_ID0 |
+    @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+    @n |                                                   |                      eBatch_ID_ALL                |
     @n ---------------------------------------------------------------------------------------------------------
     @n     eBatch_ID0     or 1 << 0 : 批量配置中，协议板上id为0的18B20传感器需要配置
     @n     eBatch_ID1     or 1 << 1 : 批量配置中，协议板上id为1的18B20传感器需要配置
     @n     eBatch_ID2     or 1 << 2 : 批量配置中，协议板上id为2的18B20传感器需要配置
     @n     eBatch_ID3     or 1 << 3 : 批量配置中，协议板上id为3的18B20传感器需要配置
-    @n     eBatch_ID4     or 1 << 4 : 批量配置中，协议板上id为4的18B20传感器需要配置
-    @n     eBatch_ID5     or 1 << 5 : 批量配置中，协议板上id为5的18B20传感器需要配置
-    @n     eBatch_ID6     or 1 << 6 : 批量配置中，协议板上id为6的18B20传感器需要配置
-    @n     eBatch_ID7     or 1 << 7 : 批量配置中，协议板上id为7的18B20传感器需要配置
-    @n     eBatch_ID_ALL  or  0xFF  : 批量配置中，协议板上所有的18B20传感器需要配置
+    @n     eBatch_ID_ALL  or  0x0F  : 批量配置中，协议板上所有的18B20传感器需要配置
     @param th: 设置温度的上阈值，范围-55~125℃
     @param tl: 设置温度的下阈值，范围-55~125℃
     @n note: 必须满足设置条件th > tl
@@ -147,45 +164,73 @@ if __name__ == "__main__":
     @n      True:  设置成功
     @n      False: 设置失败
   '''
-  board[0].batch_set_18b20_temperature_threshold(batch_id = board[0].eBatch_ID_ALL, th = 100, tl = -44) #将总线上设备地址为16的协议板上18B20传感器的温度阈值设置为高阈值100℃，低阈值-44℃
-  board[1].batch_set_18b20_temperature_threshold(batch_id = board[0].eBatch_ID_ALL, th = 100, tl = -44) #将总线上设备地址为32的协议板上id为0的18B20传感器的温度阈值设置为高阈值100℃，低阈值-44℃
+  #将modbus总线上board[0]设备的温度阈值范围设置为 高阈值100，低阈值-44，如果低于最低，或高于最高，会发生报警
+  board[0].batch_set_18b20_temperature_threshold(batch_io = board[0].eBatch_ALL, batch_id = board[0].eBatch_ID_ALL, th = 100, tl = -44) 
+  #将modbus总线上board[1]设备的温度阈值范围设置为 高阈值33，低阈值25，如果低于最低，或高于最高，会发生报警
+  board[1].batch_set_18b20_temperature_threshold(batch_io = board[1].eBatch_ALL,batch_id = board[0].eBatch_ID_ALL, th = 33, tl = 25) 
   
-  ds18b20_num = 0;
   while True:
-    device_addr     = 0 #存储TEL0144设备的设备地址
-    connected_num   = 0 #存储设备上实际连接的18B20的数量，范围0~8，最大可连接8个18B20传感器
-    connected_state = 0 #存储设备上0~7位置是否连接18B20传感器，bit0~bit1依次代表id0~id7 18B20传感器的连接状态，1代表连接，0代表未连接
-    alarm_flag      = 0 #存储协议转换板上所有18B20的温度报警状态标志
-    rom             = [0]*broadcast.DS18B20_ROM_BYTES #存储单个18B20的ROM数据， DS18B20_ROM_BYTES = 8字节
-    temp_threshold  = [0]*2 #存储18B20的温度的上下阈值，temp_threshold[0]：温度的上阈值，temp_threshold[1]：温度的下阈值
-    accuracy        = 0 #存储某个设备上某id位置连接的单个18B20的精度配置
-    temp            = 0 #存储某个设备上某id位置连接的单个18B20的测量的温度
- 
+    #记录设备地址
+    device_addr = 0
+    #记录TEL0144设备上所有IO口连接的18B20传感器数量之和，最大16个
+    total_connected = 0
+    #记录TEL0144设备上单独IO口连接的18B20传感器数量，最大4个
+    io_connected    = 0
+    #记录TEL0144设备各IO口的每个位置是否连接18B20传感器的情况，TEL0144有4个IO口，每个IO口最多可连接4个传感器，用16位数据分别代表各IO口上传感器的连接情况，0->未连接，1->连接
+    connected_state = 0 #存储设备上0~7位置是否连接18B20传感器，bit0~bit1依次代表id0~id7 18B20传感器的连接状态，1代表连接，0代表未连接  
+    #记录单个18B20的ROM数据， DS18B20_ROM_BYTES = 8字节
+    rom             = [0]*board.DS18B20_ROM_BYTES
+    #记录18B20的温度的上下阈值，temp_threshold[0]：温度的上阈值，temp_threshold[1]：温度的下阈值
+    temp_threshold  = [0]*2
+    #记录18B20的精度配置
+    accuracy  = 0
+    #记录18B20传感器采集到的温度数据
+    temp  = 0
+    #记录TEL0144设备所有18B20的温度报警状态标志
+    alarm_flag = 0
+    #索引TEL0144设备列表
     index = 0
     while index < CASCADE_DEVICE_NUM:
       device_addr   = board[index].get_device_address()
-      connected_num = board[index].get_18B20_number()
+      total_connected = board[index].get_18B20_number(board[index].eBatch_ALL)
       connected_state = board[index].scan()
       alarm_flag = board[index].get_temperature_threshold_alarm_flag()
       print("--------------borad [%d] info--------------"%index)
-      print("Device Address(range 001~247 or 0): %s,   18B20 connected numbers(range 0~8): %d"%(str(device_addr).zfill(3),connected_num))
+      print("Device Address(range 001~247 or 0): %s,   18B20 connected numbers(range 0~8): %d"%(str(device_addr).zfill(3),total_connected))
+      print("18B20 connected numbers(range 0~16): %d"%total_connected)
+      print("|-----------------------------------------------------------------------------------------------|")
+      print("|              18B20 connecte table of TEL0144(0->not connected, 1->connected)                  |")
+      print("|-----------------------------------------------------------------------------------------------|")
+      print("|           D4          |           D3          |           D2          |           D1          |")
+      print("| b15 | b14 | b13 | b12 | b11 | b10 | b09 | b08 | b07 | b06 | b05 | b04 | b03 | b02 | b01 | b00 |")
+      print("| id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 |")
+  
+      count = board[index].DS18B20_CONNECT_IO_NUM*board[index].DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM
+      while count > 0:
+        if(connected_state & (1 << (count - 1))):
+          print("|  1 ", end = " ")
+        else:
+          print("|  0 ", end = " ")
+        count -= 1
+      print("|\n|-----------------------------------------------------------------------------------------------|\n")
+      
 
-      id_num = 0
-      while id_num < 8:
-        rom = board[index].get_18B20_rom(id = id_num)
-        rom_str = board[index].get_rom_hex_string(rom)
-        temp_threshold = board[index].get_temperature_threshold(id = id_num)
-        accuracy = board[index].get_18B20_accuracy(id = id_num)
-        temp = board[index].get_temperature_c(id = id_num)
-
-        print("ID(0~7): %d,"%id_num, end = " ")
-        print("ROM: %s,"%rom_str, end = " ")
-        print("connected(0-disconnected, 1-connected): %d,"%((connected_state >> id_num)&0x01), end = " ")
-        print("accuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): %d,"%accuracy, end = " ")
-        print("Threshold High(-55~125): %d, Threshold Low(-55~125): %d,"%(temp_threshold[0], temp_threshold[1]), end = " ")
-        print("Temperature: %.2f"%temp)
-        time.sleep(0.5)
-        id_num += 1
-      index += 1
+      io = 1
+      while io <= board[index].DS18B20_CONNECT_IO_NUM:
+        io_connected = board[index].get_18B20_number(1 << (io - 1))
+        print("IO: D%d\tconnected(range 0~4):%d"%(io, io_connected))
+        id = 0
+        while id < board[index].DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM:
+          rom = board[index].get_18B20_rom(io = io, id = id)
+          rom_str = board[index].get_rom_hex_string(rom)
+          temp_threshold = board[index].get_temperature_threshold(io = io, id = id)
+          threshold_alarm_flag = board[index].parse_threshold_alarm_flag(io = io, id = id, alarm_flag = alarm_flag)
+          accuracy = board[index].get_18B20_accuracy(io = io, id = id)
+          temp = board[index].get_temperature_c(io = io, id = id)
+          print("  ID: %d, ROM: %s, Accuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): %d, ALARM(0-IN, 1-BELOW, 2-ABOVE): %d, Threshold High(-55~125): %d, Threshold Low(-55~125): %d, Temperature: %f" \
+          %(id, rom_str, accuracy, threshold_alarm_flag, temp_threshold[0],temp_threshold[1],temp))
+          time.sleep(1)
+          id += 1
+        io += 1
       print("\n")
-      time.sleep(1)
+    time.sleep(1)

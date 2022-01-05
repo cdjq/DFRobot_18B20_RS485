@@ -71,7 +71,7 @@ if __name__ == "__main__":
   err = board.begin()
   while board.begin() != 0:
     print("failed.")
-    time.sleep(1);
+    time.sleep(1)
     print("Initialization board...", end = " ")
   print("done.")
 
@@ -81,37 +81,43 @@ if __name__ == "__main__":
   print("BAUDRATE: %d\n"%board.get_baudrate())
 
   '''
-    @brief 获取序号为id的18B20温度传感器的精度。
-    @param id: 范围0~7，依次对应0~7号DS18B20传感器
-    @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-    @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-    @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-    @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-    @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-    @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-    @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-    @n     e18B20_ID7 or 7:  协议板上id为7的18B20传感器
-    @return accuracy ：精度设置,范围0~3
+    @brief 获取单个18B20传感器的精度配置。
+    @param io  指定TEL0144协议转换板的IO口，即要获取的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
+    @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
+    @n     eD2  or 2: TEL0144板子上丝印为D2的IO引脚
+    @n     eD3  or 3: TEL0144板子上丝印为D3的IO引脚
+    @n     eD4  or 4: TEL0144板子上丝印为D4的IO引脚
+    @param id: 指定TEL0144协议转换板上IO口上的序号，即要获取的18B20隶属于IO引脚上的序号，序号参数如下:
+    @n     eID0    or 0: TEL0144板子上IO口上编号为0的18B20传感器
+    @n     eID1    or 1: TEL0144板子上IO口上编号为1的18B20传感器
+    @n     eID3    or 2: TEL0144板子上IO口上编号为2的18B20传感器
+    @n     eID3    or 3: TEL0144板子上IO口上编号为3的18B20传感器
+    @param accuracy：精度设置,范围0~3
     @n      e18B20_ACCURACY_9_BIT  or 0:  9位精度
     @n      e18B20_ACCURACY_10_BIT or 1:  10位精度
     @n      e18B20_ACCURACY_11_BIT or 2:  11位精度
     @n      e18B20_ACCURACY_12_BIT or 3:  12位精度
-    @n      0xFF                       :  获取精度失败
+    @return 设置状态:
+    @n      True:  设置成功
+    @n      False: 设置失败
   '''
-  board.set_18B20_accuracy(id = board.e18B20_ID0, accuracy = board.e18B20_ACCURACY_12_BIT)
-  board.set_18B20_accuracy(id = board.e18B20_ID1, accuracy = board.e18B20_ACCURACY_9_BIT)
+  #将TEL0144设备D1 IO口id为0位置的18B20传感器的精度设置为12位精度
+  board.set_18B20_accuracy(io = board.eD1, id = board.eID0, accuracy = board.e18B20_ACCURACY_12_BIT) 
+  #将TEL0144设备D1 IO口id为1位置的18B20传感器的精度设置为9位精度
+  board.set_18B20_accuracy(io = board.eD1, id = board.eID1, accuracy = board.e18B20_ACCURACY_9_BIT)
 
   '''
-    @brief 设置序号为id的温度传感器的上下温度阈值，如果不修改，默认配置为高阈值125℃，低阈值-55℃，掉电保存，配置不丢失。
-    @param id: 范围0~7，依次对应0~7号DS18B20传感器
-    @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-    @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-    @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-    @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-    @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-    @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-    @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-    @n     e18B20_ID7 or 7:  协议板上id为7的18B20传感器
+    @brief 设置指定18B20的温度阈值
+    @param io  指定TEL0144协议转换板的IO口，即要设置的18B20传感器隶属于那个IO引脚，IO引脚参数如下:
+    @n     eD1  or 1: TEL0144板子上丝印为D1的IO引脚
+    @n     eD2  or 2: TEL0144板子上丝印为D2的IO引脚
+    @n     eD3  or 3: TEL0144板子上丝印为D3的IO引脚
+    @n     eD4  or 4: TEL0144板子上丝印为D4的IO引脚
+    @param id: 指定TEL0144协议转换板上IO口上的序号，即要配置的18B20隶属于IO引脚上的序号，序号参数如下:
+    @n     eID0    or 0: TEL0144板子上IO口上编号为0的18B20传感器
+    @n     eID1    or 1: TEL0144板子上IO口上编号为1的18B20传感器
+    @n     eID3    or 2: TEL0144板子上IO口上编号为2的18B20传感器
+    @n     eID3    or 3: TEL0144板子上IO口上编号为3的18B20传感器
     @param th: 设置温度的上阈值，范围-55~125℃
     @param tl: 设置温度的下阈值，范围-55~125℃
     @n note: 必须满足设置条件th > tl
@@ -119,158 +125,134 @@ if __name__ == "__main__":
     @n      True:  设置成功
     @n      False: 设置失败
   '''
-  board.set_temperature_threshold(id = board.e18B20_ID0, th = 100, tl = 26)
-  board.set_temperature_threshold(id = board.e18B20_ID1, th = 33, tl = 28)
+  #将TEL0144设备D1 IO口id为0位置的18B20传感器的温度报警阈值设置为，高阈值100，低阈值26，如果低于最低，或高于最高，会发生报警
+  board.set_temperature_threshold(io = board.eD1, id = board.eID0, th = 100, tl = 26)
+  #将TEL0144设备D1 IO口id为1位置的18B20传感器的温度报警阈值设置为，高阈值33，低阈值28，如果低于最低，或高于最高，会发生报警
+  board.set_temperature_threshold(io = board.eD1, id = board.eID1, th = 33, tl = 28)
   
-  ds18b20_num = 0;
   while True:
-    connected_state = 0 #存储设备上0~7位置是否连接18B20传感器，bit0~bit1依次代表id0~id7 18B20传感器的连接状态，1代表连接，0代表未连接
-    connected_num   = 0 #存储设备上实际连接的18B20的数量，范围0~8，最大可连接8个18B20传感器
-    alarm_flag      = 0 #存储协议转换板上所有18B20的温度报警状态标志
-    rom             = [0]*board.DS18B20_ROM_BYTES #存储单个18B20的ROM数据， DS18B20_ROM_BYTES = 8字节
-    temp_threshold  = [0]*2 #存储18B20的温度的上下阈值，temp_threshold[0]：温度的上阈值，temp_threshold[1]：温度的下阈值
-    accuracy        = 0 #存储某个设备上某id位置连接的单个18B20的精度配置
-    temp            = 0 #存储某个设备上某id位置连接的单个18B20的测量的温度
- 
+    #记录TEL0144设备上所有IO口连接的18B20传感器数量之和，最大16个
+    total_connected = 0
+    #记录TEL0144设备上单独IO口连接的18B20传感器数量，最大4个
+    io_connected    = 0
+    #记录TEL0144设备各IO口的每个位置是否连接18B20传感器的情况，TEL0144有4个IO口，每个IO口最多可连接4个传感器，用16位数据分别代表各IO口上传感器的连接情况，0->未连接，1->连接
+    connected_state = 0 #存储设备上0~7位置是否连接18B20传感器，bit0~bit1依次代表id0~id7 18B20传感器的连接状态，1代表连接，0代表未连接  
+    #记录单个18B20的ROM数据， DS18B20_ROM_BYTES = 8字节
+    rom             = [0]*board.DS18B20_ROM_BYTES
+    #记录18B20的温度的上下阈值，temp_threshold[0]：温度的上阈值，temp_threshold[1]：温度的下阈值
+    temp_threshold  = [0]*2
+    #记录18B20的精度配置
+    accuracy  = 0
+    #记录18B20传感器采集到的温度数据
+    temp  = 0
+    #记录TEL0144设备所有18B20的温度报警状态标志
+    alarm_flag = 0
+    
     '''
-      @brief 每块TEL0144设备最多能连接8个18B20温度传感器，并为每个传感器分配序号为0~7的id,以此来保存对应18B20传感器的相关配置，比如id为0的18B20的ROM码，精度，上下阈值和测量的温度
-      @n 会保存在0号id对应的寄存器中，id为1的保存在1号id对应的寄存器中。这个函数的作用就是检查0~7序号的id哪些连接了18B20传感器，在采集中，从而可以知道id号来获取相应18B20传感器的配置。
-      @n
-      @n 18B20的id分配原理：1.序号从0~7，即第一个连接的18B20传感器，分配的id序号为0，接下来的依次分配，直到0~7号id全部被分配；
-      @n                   2.新接入的传感器，先分配没有分配过的id，如果0~7都被分配完了，再从头查找是否有id号被分配，但是分配的那个传感器已掉线，没有使用。例：0号id已被分配，此时把0
-      @n                     号id对应的传感器拔掉，新插入传感器，新传感器将从1开始分配，直到7被分配完了，再占用已经被分配的id0。
-      @n                   3.传感器掉线后，再次连接，如果它的id没有被占用，将继续使用以前给他分配的id号。
-      @n
-      @return 返回8位状态位，从bit0~bit7分别代表0~7序号的id对应的18B20传感器是否存在，置1代表对应的序号已被分配且传感器在线，清0代表该序号未被分配或已被分配但该传感器离线，无法检测。
-      @n note: 此功能不支持广播地址类对象
+      @brief 扫描TEL0144协议转换板每个IO口上是否连接的18B20传感器的情况
+      @return 返回TEL0144设备4个IO上序号0~3对应的18B20传感器是否连接的状态，1表示已连接18B20传感器，0表示传感器未连接
+      @n ----------------------------------------------------------------------------------------------------------------------
+      @n |  b15  |  b14  |  b13  |  b12  |  b11  |  b10  |  b9  |  b8  |  b7  |  b6  |  b5  |  b4  |  b3  |  b2  |  b1  |  b0  |
+      @n |              D4               |              D3             |            D2             |            D1             |
+      @n |  id3  |  id2  |  id1  |  id0  |  id3  |  id2  |  id1 |  id0 |  id3 |  id2 |  id1 |  id0 |  id3 |  id2 |  id1 |  id0 |
+      @n -----------------------------------------------------------------------------------------------------------------------
+      @n 16位返回值的b0~b3,   对应D1 IO口上序号id0~id3位置上连接的18B20传感器状态，0->未连接传感器， 1->有传感器连接
+      @n 16位返回值的b4~b7,   对应D2 IO口上序号id0~id3位置上连接的18B20传感器状态，0->未连接传感器， 1->有传感器连接
+      @n 16位返回值的b8~b11,  对应D3 IO口上序号id0~id3位置上连接的18B20传感器状态，0->未连接传感器， 1->有传感器连接
+      @n 16位返回值的b12~b15, 对应D4 IO口上序号id0~id3位置上连接的18B20传感器状态，0->未连接传感器， 1->有传感器连接
     '''
+    #scan 扫描TEL0144设备上各IO口各id位置是否连接了18B20传感器，1：连接，0：未连接
     connected_state = board.scan()
+    
     '''
-     @brief 获取协议转换板上实际连接的18B20的数量。
-     @return 18B20设备数量，范围0~8：
-     @n      0：协议转换板上未连接18B20传感器
-     @n      1: 协议转换板上连接了1个18B20传感器
-     @n      ......
-     @n      8:  协议转换板上连接了8个18B20传感器
-   '''
-    connected_num   = board.get_18B20_number()
+      @brief 获取选中的IO口上实际连接的18B20的数量。
+      @param batch_io 选择要获取那些IO引脚上连接的传感器的数量和，各项之间用|表示，比如要获取D1和D2口上连接的18B20传感器的数量，则参数为(eBatch_D1|eBatch_D2)
+      @n ---------------------------------------------------------------------------------------------------------
+      @n |     7      |     6      |     5      |     4      |     3      |     2      |     1      |     0      |
+      @n |    rsv     |    rsv     |    rsv     |    rsv     | eBatch_D4  | eBatch_D3  | eBatch_D2  | eBatch_D1  |
+      @n |     x      |     x      |     x      |     x      |   1 << 3   |   1 << 2   |   1 << 1   |   1 << 0   |
+      @n |                                                   |                      eBatch_ALL                   |
+      @n ---------------------------------------------------------------------------------------------------------
+      @n     eBatch_D1     or 1 << 0 : 批量配置中， D1 IO引脚被选择，即获取D1引脚上连接的18B20传感器的数量
+      @n     eBatch_D2     or 1 << 1 : 批量配置中， D2 IO引脚被选择，即获取D2引脚上连接的18B20传感器的数量
+      @n     eBatch_D3     or 1 << 2 : 批量配置中， D3 IO引脚被选择，即获取D3引脚上连接的18B20传感器的数量
+      @n     eBatch_D4     or 1 << 3 : 批量配置中， D4 IO引脚被选择，即获取D4引脚上连接的18B20传感器的数量
+      @n     eBatch_ALL    or  0x0F  : 批量配置中， D1~D4 所有IO引脚被选择，即获取板子上所有连接的18B20传感器的数量
+      @return 18B20设备数量，范围0~16：
+      @n      0：协议转换板上未连接18B20传感器
+      @n      1: 协议转换板上连接了1个18B20传感器
+      @n      ......
+      @n      16:  协议转换板上连接了16个18B20传感器
     '''
-      @brief 解析id对应的18B20温度传感器的温度相对于温度阈值范围的状态。
-      @param id: 范围0~7，依次对应0~7号DS18B20传感器
-      @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-      @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-      @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-      @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-      @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-      @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-      @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-      @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-      @param alarm_flag: 传入get_temperature_threshold_alarm_flag函数的返回值
-      @return id所对应的18B20的温度相对于温度阈值的状态:
-      @n      IN_THE_TEMPERATURE_THRESHOLD            or 0:   in 在温度阈值范围内
-      @n      BELOW_THE_LOWEST_TEMPERATURE_THRESHOLD  or 1:   below 低于最低温度阈值
-      @n      ABOVE_THE_HIGHEST_TEMPERATURE_THRESHOLD or 2:   above 高于最高温度阈值
+    #get_18B20_number 扫描TEL0144设备上总共连接了多少个18B20传感器，最大可连接16个
+    total_connected = board.get_18B20_number(board.eBatch_ALL)
+    
     '''
+      @brief 获取TEL0144协议转换板上各IO口连接的18B20传感器温度阈值报警状态。
+      @return 单个TEL0144协议板上所有传感器是否发生温度阈值报警的状态:
+      @n -----------------------------------------------------------------
+      @n |  b31  |  b30  |  b29  |  b28  |  b27  |  b26  |  b25  |  b24  |
+      @n |                               D4                              |
+      @n |  id3  |  id2  |  id1  |  id0  |  id3  |  id2  |  id1  |  id0  |
+      @n -----------------------------------------------------------------
+      @n |  b23  |  b22  |  b21  |  b20  |  b19  |  b18  |  b17  |  b16  |
+      @n |                               D3                              |
+      @n |  id3  |  id2  |  id1  |  id0  |  id3  |  id2  |  id1  |  id0  |
+      @n -----------------------------------------------------------------
+      @n |  b15  |  b14  |  b13  |  b12  |  b11  |  b10  |  b9   |  b8   |
+      @n |                               D2                              |
+      @n |  id3  |  id2  |  id1  |  id0  |  id3  |  id2  |  id1  |  id0  |
+      @n -----------------------------------------------------------------
+      @n |  b7   |  b6   |  b5   |  b4   |  b3   |  b2   |  b1   |  b0   |
+      @n |                               D1                              |
+      @n |  id3  |  id2  |  id1  |  id0  |  id3  |  id2  |  id1  |  id0  |
+      @n -----------------------------------------------------------------
+      @n 32位返回值中b0~b7，   表示D1引脚上连接的18B20传感器发生阈值报警的状态，其中b0~b3分别代表IO引脚上序号id0~id3是否发生温度阈值报警，0->未发生，1->发生，b4~b5分别代表该IO引脚上的传感器如果发生了阈值报警，发生的是什么情况的报警，0->低于最低阈值报警,1->1高于最高温度阈值报警;
+      @n 32位返回值中b8~b15，  表示D2引脚上连接的18B20传感器发生阈值报警的状态，其中b0~b3分别代表IO引脚上序号id0~id3是否发生温度阈值报警，0->未发生，1->发生，b4~b5分别代表该IO引脚上的传感器如果发生了阈值报警，发生的是什么情况的报警，0->低于最低阈值报警,1->1高于最高温度阈值报警;
+      @n 32位返回值中b16~b23， 表示D3引脚上连接的18B20传感器发生阈值报警的状态，其中b0~b3分别代表IO引脚上序号id0~id3是否发生温度阈值报警，0->未发生，1->发生，b4~b5分别代表该IO引脚上的传感器如果发生了阈值报警，发生的是什么情况的报警，0->低于最低阈值报警,1->1高于最高温度阈值报警;
+      @n 32位返回值中b24~b31， 表示D4引脚上连接的18B20传感器发生阈值报警的状态，其中b0~b3分别代表IO引脚上序号id0~id3是否发生温度阈值报警，0->未发生，1->发生，b4~b5分别代表该IO引脚上的传感器如果发生了阈值报警，发生的是什么情况的报警，0->低于最低阈值报警,1->1高于最高温度阈值报警;
+      @attention 广播地址（0x00）无法获取任何数据，只能设置
+    '''
+    #查询TEL0144板子上各个IO口每个id是否发生温度阈值报警标志
     alarm_flag = board.get_temperature_threshold_alarm_flag()
 
-    print("18B20 connected numbers(range 0~8): %d"%connected_num)
+    print("18B20 connected numbers(range 0~16): %d"%total_connected)
+    print("|-----------------------------------------------------------------------------------------------|")
+    print("|              18B20 connecte table of TEL0144(0->not connected, 1->connected)                  |")
+    print("|-----------------------------------------------------------------------------------------------|")
+    print("|           D4          |           D3          |           D2          |           D1          |")
+    print("| b15 | b14 | b13 | b12 | b11 | b10 | b09 | b08 | b07 | b06 | b05 | b04 | b03 | b02 | b01 | b00 |")
+    print("| id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 | id3 | id2 | id1 | id0 |")
 
-    id_num = 0
-    while id_num < board.SENSOR_CONNECTED_MAX_NUM:
-      if (connected_state & (1 << id_num)):
-        '''
-          @brief 获取序号为id的温度传感器的ROM码。
-          @param id: 范围0~7，依次对应0~7号DS18B20传感器
-          @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-          @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-          @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-          @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-          @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-          @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-          @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-          @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-          @return 长度为8的ROM码列表，全为0代表获取失败或该id未被分配给18B20传感器
-        '''
-        rom = board.get_18B20_rom(id = id_num)
-        '''
-          @brief 将获取到的8字节的ROM码转换为16进制表示的字符串，例：8字节的ROM号为0x28 0xAA 0xAD 0x38 0x54 0x14 0x01 0x6A转化为
-          @n 字符串为28AAAD385414016A。
-          @param rom: 长度为8的ROM列表。
-          @return ROM码的16进制字符串或空字符串:
-        '''
-        rom_str = board.get_rom_hex_string(rom)
-        '''
-          @brief 获取序号为id的温度传感器的上下温度阈值。
-          @param id: 范围0~7，依次对应0~7号DS18B20传感器
-          @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-          @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-          @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-          @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-          @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-          @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-          @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-          @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-          @return 长度为2的整型列表:
-          @n      列表索引0:  存储温度的上阈值
-          @n      列表索引1:  存储温度的下阈值
-        '''
-        temp_threshold = board.get_temperature_threshold(id = id_num)
-        '''
-          @brief 获取序号为id的18B20温度传感器的精度。
-          @param id: 范围0~7，依次对应0~7号DS18B20传感器
-          @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-          @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-          @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-          @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-          @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-          @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-          @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-          @n     e18B20_ID7 or 7:  协议板上id为7的18B20传感器
-          @return accuracy：精度设置,范围0~3
-          @n      e18B20_ACCURACY_9_BIT  or 0:  9位精度
-          @n      e18B20_ACCURACY_10_BIT or 1:  10位精度
-          @n      e18B20_ACCURACY_11_BIT or 2:  11位精度
-          @n      e18B20_ACCURACY_12_BIT or 3:  12位精度
-          @n      0xFF                       :  获取精度失败
-        '''
-        accuracy = board.get_18B20_accuracy(id = id_num)
-        '''
-          @brief 获取序号为id的18B20的温度数据，单位：摄氏度(℃)。
-          @param id: 范围0~7，依次对应0~7号DS18B20传感器
-          @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-          @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-          @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-          @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-          @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-          @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-          @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-          @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-          @return 温度:单位摄氏度，可以测量-55~125摄氏度范围内的温度
-        '''
-        temp = board.get_temperature_c(id = id_num)
+    count = board.DS18B20_CONNECT_IO_NUM*board.DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM
+    while count > 0:
+      if(connected_state & (1 << (count - 1))):
+        print("|  1 ", end = " ")
+      else:
+        print("|  0 ", end = " ")
+      count -= 1
+    print("|\n|-----------------------------------------------------------------------------------------------|\n")
 
-        '''
-          @brief 解析id对应的18B20温度传感器的温度相对于温度阈值范围的状态。
-          @param id: 范围0~7，依次对应0~7号DS18B20传感器
-          @n     e18B20_ID0 or 0: 协议板上id为0的18B20传感器
-          @n     e18B20_ID1 or 1: 协议板上id为1的18B20传感器
-          @n     e18B20_ID2 or 2: 协议板上id为2的18B20传感器
-          @n     e18B20_ID3 or 3: 协议板上id为3的18B20传感器
-          @n     e18B20_ID4 or 4: 协议板上id为4的18B20传感器
-          @n     e18B20_ID5 or 5: 协议板上id为5的18B20传感器
-          @n     e18B20_ID6 or 6: 协议板上id为6的18B20传感器
-          @n     e18B20_ID7 or 7: 协议板上id为7的18B20传感器
-          @param alarm_flag: 传入get_temperature_threshold_alarm_flag函数的返回值
-          @return id所对应的18B20的温度相对于温度阈值的状态:
-          @n      IN_THE_TEMPERATURE_THRESHOLD            or 0:   in 在温度阈值范围内
-          @n      BELOW_THE_LOWEST_TEMPERATURE_THRESHOLD  or 1:   below 低于最低温度阈值
-          @n      ABOVE_THE_HIGHEST_TEMPERATURE_THRESHOLD or 2:   above 高于最高温度阈值
-        '''
-        threshold_alarm_flag = board.parse_threshold_alarm_flag(id = id_num, alarm_flag = alarm_flag)
-        
-        print("ID: %d, ROM: %s, Accuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): %d, ALARM(0-IN, 1-BELOW, 2-ABOVE): %d, Threshold High(-55~125): %d, Threshold Low(-55~125): %d, Temperature: %f" \
-        %(id_num, rom_str, accuracy, threshold_alarm_flag, temp_threshold[0],temp_threshold[1],temp))
-        time.sleep(0.5)
-      id_num += 1
+    io = 1
+    while io <= board.DS18B20_CONNECT_IO_NUM:
+      io_connected = board.get_18B20_number(1 << (io - 1))
+      if io_connected == 0:
+        io += 1
+        continue
+      print("IO: D%d\tconnected(range 0~4):%d"%(io, io_connected))
+      id = 0
+      while id < board.DS18B20_CONNECTED_TO_EACH_IO_MAX_NUM:
+        if (connected_state & (1 << (4 * (io - 1) + id))):
+          rom = board.get_18B20_rom(io = io, id = id)
+          rom_str = board.get_rom_hex_string(rom)
+          temp_threshold = board.get_temperature_threshold(io = io, id = id)
+          threshold_alarm_flag = board.parse_threshold_alarm_flag(io = io, id = id, alarm_flag = alarm_flag)
+          accuracy = board.get_18B20_accuracy(io = io, id = id)
+          temp = board.get_temperature_c(io = io, id = id)
+          print("  ID: %d, ROM: %s, Accuarcy(0-9bits, 1-10bits, 2-11bits, 3-12bits): %d, ALARM(0-IN, 1-BELOW, 2-ABOVE): %d, Threshold High(-55~125): %d, Threshold Low(-55~125): %d, Temperature: %f" \
+          %(id, rom_str, accuracy, threshold_alarm_flag, temp_threshold[0],temp_threshold[1],temp))
+          time.sleep(1)
+        id += 1
+      io += 1
     print("\n")
     time.sleep(1)
