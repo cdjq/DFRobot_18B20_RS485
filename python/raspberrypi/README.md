@@ -15,7 +15,6 @@ TEL0144设备板载USB CDC接口和RS485接口，集成了4个IO口用来驱动1
 * [Summary](#summary)
 * [Connected](#connected)
 * [Installation](#installation)
-* [Calibration](#calibration)
 * [Methods](#methods)
 * [Compatibility](#compatibility)
 * [History](#history)
@@ -457,8 +456,8 @@ To use this library, first download the library file, then open the examples fol
 
 ## History
 
-- 2021/07/12 - 1.0.0 版本
-- 2021/12/20 - 1.0.1 版本
+- 2021/07/12 - Version 1.0.0 released.
+- 2021/12/20 - Version 1.0.1 released.
 
 ## Credits
 

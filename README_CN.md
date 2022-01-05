@@ -435,15 +435,15 @@ TX           |        连接到主控串口的RX引脚       |
 
 ## 兼容性
 
-MCU                | SoftwareSerial | HardwareSerial |
------------------- | :----------: | :----------: |
-Arduino Uno        |      √       |      X       |
-Mega2560           |      √       |      √       |
-Leonardo           |      √       |      √       |
-ESP32              |      X       |      √       |
-ESP8266            |      √       |      X       |
-micro:bit          |      X       |      X       |
-FireBeetle M0      |      X       |      √       |
+MCU                |  Work Well    | Work Wrong   | Untested    | Remarks
+------------------ | :----------: | :----------: | :---------: | -----
+Arduino Uno        |       √       |              |             | 
+Mega2560           |      √       |              |             | 
+Leonardo           |      √       |              |             | 
+ESP32              |      √       |              |             | 
+ESP8266            |      √       |              |             | 
+micro:bit          |      √       |              |             | 
+FireBeetle M0      |      √       |              |             | 
 
 ## 历史
 
