@@ -461,7 +461,7 @@ To use this library, first download the library file, then open the examples fol
 
 ## Credits
 
-Written by(xue.peng@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
+Written by Arya(xue.peng@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
 
 
 

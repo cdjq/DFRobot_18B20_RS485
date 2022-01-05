@@ -452,7 +452,7 @@ FireBeetle M0      |      √       |              |             |
 
 ## 创作者
 
-Written by(xue.peng@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
+Written by Arya(xue.peng@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
 
 
 
